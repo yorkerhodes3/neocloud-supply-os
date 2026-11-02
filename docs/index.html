@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en" data-ground="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neocloud Supply OS: an AI-native, agent-first supply chain</title>
+<meta name="description" content="A concept for running a neocloud's entire supply chain (chips, hardware, data center build, SCOR operations and third-party risk) on one graph, one ledger and a fleet of mandated AI agents.">
+<meta property="og:title" content="Neocloud Supply OS">
+<meta property="og:description" content="Contract to capacity, run by agents. 80 functions, 36 desks, 1 platform instead of 140 apps.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<script>try{var c=JSON.parse(localStorage.getItem('nso.vars')||'null'),q=new URLSearchParams(location.search).get('brand');if(c&&(!q||q===c.id)){var r=document.documentElement;r.dataset.ground=c.ground;for(var k in c.vars)r.style.setProperty(k,c.vars[k]);}}catch(e){}</script>
+<link rel="stylesheet" href="assets/fonts/fonts.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/site.css">
+<script type="module" src="assets/js/pages/index.js"></script>
+</head>
+<body>
+<a href="#main" class="sr-only">Skip to content</a>
+<header data-shell="nav"></header>
+
+<main id="main">
+<!-- ============ HERO ============ -->
+<section class="hero" aria-labelledby="hero-title">
+  <div class="grid-bg" aria-hidden="true"></div>
+  <canvas class="graph" id="heroGraph" aria-hidden="true"></canvas>
+  <div class="veil" aria-hidden="true"></div>
+  <div class="wrap">
+    <span class="eyebrow reveal">Concept demo · <span data-brand-name></span> edition</span>
+    <h1 id="hero-title" class="fluid-hero reveal d1">Contract to capacity.<span class="l2">Run by agents.</span></h1>
+    <p class="lede reveal d2"><b><span data-brand-product>Neocloud</span> Supply OS</b> turns signed customer demand into powered, compliant, revenue-earning GPU capacity. It runs one graph, one ledger and a fleet of mandated AI agents across chips, hardware, data center build, SCOR operations and third-party risk, so a small team can add capacity faster and more safely than a company running 140 separate applications.</p>
+    <div class="cta reveal d3">
+      <a class="btn primary btn-sweep" href="simulate.html">Run the agentic simulation →</a>
+      <a class="btn" href="negotiate.html">Enter the negotiation room</a>
+      <a class="btn ghost" href="#solution">How it works</a>
+    </div>
+    <div class="statstrip reveal" id="statstrip"></div>
+  </div>
+  <div class="live" aria-hidden="true"><span><span class="pulse-dot"></span>illustrative live graph</span><span><b id="liveEvents">0</b> ledger events · <b id="liveHuman">0</b> human decisions</span></div>
+</section>
+
+<!-- ============ PROBLEM ============ -->
+<section class="band" id="problem">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">01 · The problem</span>
+      <h2 class="fluid-h2">A neocloud's supply chain is a <span class="display-em">latency machine</span>.</h2>
+      <p class="lede">Capacity is late because work waits: between applications, between people and between companies. Every week a rack is not billable is idle capital. The usual answer is another tool and another integration, which adds latency.</p>
+    </div>
+    <div class="grid g3" id="pains"></div>
+  </div>
+</section>
+
+<!-- ============ IDEA ============ -->
+<section class="band" id="solution">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">02 · The idea</span>
+      <h2 class="fluid-h2">One system. <span class="display-em">Not 140 applications</span> connected by people.</h2>
+      <p class="lede">Suppliers deal with our agents, not our portals. Third-party risk is a continuous signal that every desk consults before it acts, not a tool bolted on at the end.</p>
+    </div>
+    <div class="pillars reveal">
+      <div><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M8 7.5 10.8 16M16 7.5 13.2 16M8.5 6h7"/></svg></div><h3>One graph, one ledger</h3><p>Every part, serial number, supplier, site, contract, shipment, permit and risk signal, with every change recorded as a signed, append-only event.</p></div>
+      <div><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="7" height="7" rx="2"/><rect x="14" y="4" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg></div><h3>36 agent desks</h3><p>One desk per business function, each with a charter, typed tools, a mandate, KPIs and an evaluation suite. A new function is a new desk, not a new app.</p></div>
+      <div><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 4 6v6c0 4.5 3.4 8.2 8 9 4.6-.8 8-4.5 8-9V6Z"/><path d="m9 12 2 2 4-4"/></svg></div><h3>Deterministic gates</h3><p>Moving money, compliance calls and safety decisions pass code, not prompts. LLMs propose; policy disposes.</p></div>
+      <div><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1-3.6 3.8-5.5 7-5.5s6 1.9 7 5.5"/></svg></div><h3>A small human team</h3><p>Humans set intent, hold the key relationships, sign what the law says a person must sign, and handle exceptions from one cockpit.</p></div>
+    </div>
+
+    <div class="section-head" style="margin-top:80px">
+      <span class="eyebrow">Seven design commitments</span>
+    </div>
+    <ol class="commit reveal">
+      <li><div><b>One graph, one ledger.</b><p>No app-to-app integrations because there are no apps, only agents and views. The graph is a projection of the ledger, so any state can be replayed.</p></div></li>
+      <li><div><b>Agents are the application layer.</b><p>A desk is defined as code: versioned, reviewed, evaluated and promoted like software.</p></div></li>
+      <li><div><b>Mandates, not roles.</b><p>Authority is a signed, scoped, capped, time-boxed delegation, for example "book freight on approved lanes up to $X per shipment until date Y". Every action cites one.</p></div></li>
+      <li><div><b>LLMs propose; policy disposes.</b><p>Agents handle ambiguity. Code enforces limits on money, holds, clearances and commitments.</p></div></li>
+      <li><div><b>Untrusted content never touches authority.</b><p>Supplier documents and agent messages are read by a quarantined Reader with no tools. Only schema-valid data crosses over.</p></div></li>
+      <li><div><b>Evidence-carrying decisions.</b><p>Sayari entity IDs, document hashes, retrieval dates, policy version, mandate, model and approver go into every record. Flags are prompts to investigate, never findings.</p></div></li>
+      <li><div><b>Earn autonomy.</b><p>Every desk starts read-only and climbs the ladder only when measured accuracy earns it. Humans manage by exception.</p></div></li>
+      <li class="plus"><div><b>And: all the tokens you want.</b><p>Read everything every time, re-screen the whole graph continuously, simulate before committing, get second opinions by default, shadow every release and red-team constantly. External queries and physics are still metered.</p></div></li>
+    </ol>
+
+    <div class="rule reveal">
+      <div class="own"><span class="k">Sourcing rule</span><h4>Own the brain</h4><p>Data model, agents, policy, workflows, interface and evaluations are built in-house.</p></div>
+      <div><span class="k">Rent the senses</span><h4>Data we can't create</h4><p>Sayari, official lists, trade data, hazard feeds and commodity indices.</p></div>
+      <div><span class="k">Rent the rails</span><h4>Regulated rails</h4><p>Banks, licensed customs brokers, insurers and e-signature.</p></div>
+      <div><span class="k">Route the models</span><h4>Many models</h4><p>Route across foundation models on our own fleet, with external fallback. We do not train our own.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ARCHITECTURE ============ -->
+<section class="band" id="architecture">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">03 · Topology and write path</span>
+      <h2 class="fluid-h2">Every action passes <span class="display-em">the gate</span>.</h2>
+      <p class="lede">A Conductor turns human intent and incoming events into tasks for domain desks. Desks act only through typed tools. Every proposed action meets the deterministic Policy and Mandate Engine before it reaches the ledger. Click any node to see what it does.</p>
+    </div>
+    <div class="topo-wrap">
+      <div class="panel reveal"><div class="panel-head"><h4>Agent topology</h4><span class="spacer"></span><button class="btn sm" id="topoPlay">▶ Animate write path</button></div>
+        <div class="panel-body"><svg class="topo" id="topo" viewBox="0 0 750 470" role="img" aria-label="Agent topology diagram"></svg></div></div>
+      <div class="stack reveal d1">
+        <div class="card node-info" id="nodeInfo"><span class="k">Select a node</span><h4>Conductor</h4><p class="small muted">Routes and decomposes. It never parses raw data and makes no direct commitments.</p></div>
+        <div class="panel"><div class="panel-head"><h4>The write path</h4></div><div class="panel-body">
+          <ol class="writepath" id="writepath">
+            <li><span>A desk proposes a typed command with its mandate reference and evidence.</span></li>
+            <li><span>The Policy Engine checks authority, mandate scope, cap and expiry, holds, separation of duties and budget. The result is <b>allow</b>, <b>deny</b> or <b>escalate</b>.</span></li>
+            <li><span>On allow, the command becomes a signed ledger event, the graph updates, and subscribed desks wake up.</span></li>
+            <li><span>On escalate, the cockpit shows a named human the recommendation, alternatives, evidence and deadline.</span></li>
+            <li><span>The Auditor, running on a different model family, samples and re-checks events independently.</span></li>
+          </ol></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ AGENTS ============ -->
+<section class="band" id="agents">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">04 · Every function, aligned to SCOR DS</span>
+      <h2 class="fluid-h2"><span id="fnCount">80</span> functions. <span class="display-em">36 desks.</span> One graph.</h2>
+      <p class="lede">The complete capability map from the concept, arranged in ten lanes. Each function names its agent desk, the human who stays accountable, its starting autonomy and the legacy tool it replaces. Pick a desk below to light up its functions.</p>
+    </div>
+    <div class="fx-bar">
+      <input type="search" id="fnSearch" placeholder="Search functions, desks, tools…" aria-label="Search functions">
+      <div class="seg" id="autoFilter" role="group" aria-label="Starting autonomy">
+        <button aria-pressed="true" data-a="all">All</button><button aria-pressed="false" data-a="L0">L0</button><button aria-pressed="false" data-a="L1">L1</button><button aria-pressed="false" data-a="L2">L2</button><button aria-pressed="false" data-a="L3">L3+</button>
+      </div>
+      <span class="spacer"></span><span class="tiny muted" id="fnShown"></span>
+    </div>
+    <div class="fx-grid">
+      <div class="lanes" id="lanes"></div>
+      <div class="fn-list" id="fnList"></div>
+    </div>
+
+    <div class="section-head" style="margin-top:90px">
+      <span class="eyebrow">The desk wall</span>
+      <h3 class="fluid-h3">36 desks, each a charter in code, with a starting rung on the autonomy ladder</h3>
+    </div>
+    <div class="desks" id="desks"></div>
+  </div>
+</section>
+
+<!-- ============ SUPPLIERS ============ -->
+<section class="band" id="suppliers">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">05 · Agent-first supplier engagement</span>
+      <h2 class="fluid-h2">Suppliers talk to <span class="display-em">agents</span>, not portals.</h2>
+      <p class="lede">Every supplier gets a minutes-not-weeks counterpart, at whatever level of technology it already has. One typed protocol, signed and replay-protected. One supplier's prices are never shown to another; the Envoy gateway enforces that as a hard rule.</p>
+    </div>
+    <div class="grid g3" id="tiers"></div>
+    <div class="grid g2" style="margin-top:18px">
+      <div class="panel reveal"><div class="panel-head"><h4>Typed message families</h4></div><div class="panel-body"><dl class="msgs" id="msgs"></dl></div></div>
+      <div class="panel reveal d1"><div class="panel-head"><h4>A signed Quote on the wire</h4><span class="spacer"></span><span class="marker">illustrative</span></div><div class="panel-body"><div class="wire" id="wire"></div></div></div>
+    </div>
+    <div class="grid g2" style="margin-top:18px">
+      <div class="card reveal"><span class="k">Supplier Passport</span><h3>Questionnaires, retired</h3><p class="small muted">A set of verifiable credentials the supplier holds once and presents: certificates with issuer and expiry, audit outcomes, conflict-minerals templates, insurance, verified banking that can only change through out-of-band checks, and our Sayari resolution reference.</p></div>
+      <div class="card reveal d1"><span class="k">Hardware Passport</span><h3>One signed record per serial</h3><p class="small muted">Origin, ECCN and HTS codes, firmware hashes and attestation, burn-in, chain of custody from factory to rack, liens and warranty, then sanitisation and the next owner. Lenders, customs, customers and resale buyers each see what they are entitled to.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ RISK ============ -->
+<section class="band" id="risk">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">06 · Risk and resilience backbone</span>
+      <h2 class="fluid-h2">Third-party risk as a <span class="display-em">continuous signal</span>, backed by Sayari.</h2>
+      <p class="lede">Sayari's entity, ownership and trade graph, reached over MCP, resolves every counterparty by identifier, traces the network down to tier n, and attaches risk factors. Official lists stay the legal authority. Each desk asks one question before it acts: <i>what is my exposure?</i></p>
+    </div>
+    <div class="flow reveal">
+      <div><span class="step">1 · Resolve</span><h4>Who is this?</h4><p>Match on identifiers like LEI and registry numbers, never on name alone.</p><p style="margin-top:8px"><code>search_entities</code></p></div>
+      <div><span class="step">2 · Traverse</span><h4>Who is behind them?</h4><p>Ownership and <code>receives_from</code> edges, written to the graph with the tier labelled.</p><p style="margin-top:8px"><code>traverse_network</code></p></div>
+      <div><span class="step">3 · Screen</span><h4>What attaches?</h4><p>Sanctions, export-control proximity, forced labour, state ownership and more.</p><p style="margin-top:8px"><code>risk factors</code></p></div>
+      <div><span class="step">4 · Corroborate</span><h4>Is it true?</h4><p>Official lists at decision time, trade data, hazard feeds and cited news.</p><p style="margin-top:8px"><code>OFAC · BIS · UFLPA · GDACS</code></p></div>
+      <div><span class="step">5 · Decide</span><h4>What's exposed?</h4><p>Exposure means parts × orders × racks × customers. A hold is placed automatically; clearing it needs a human.</p><p style="margin-top:8px"><code>Screener → cockpit</code></p></div>
+    </div>
+    <p class="quote-band reveal">Flags are <em>prompts to investigate</em>, never findings.</p>
+    <div class="grid g2">
+      <div class="reveal"><h3 class="fluid-h3" style="margin-bottom:14px">Signal → default policy action</h3><div class="table-wrap"><table class="t" id="signals"></table></div></div>
+      <div class="reveal d1"><h3 class="fluid-h3" style="margin-bottom:14px">Sayari MCP tool mapping <span class="marker" data-tip="Tool names come from the CoLab reference build and must be checked against the live Sayari MCP server before relying on them.">verify</span></h3><div class="table-wrap"><table class="t" id="tools"></table></div></div>
+    </div>
+    <div class="notice" style="margin-top:18px"><b>Licensing and testing.</b> Sayari data is licensed and its queries are metered. Every desk is tested against a DTSF behavioural twin of the Sayari MCP server, so evaluations and simulations make no paid queries. Everything on this site uses simulated signals in Sayari's documented risk-factor categories. No Sayari data appears here.</div>
+  </div>
+</section>
+
+<!-- ============ HUMANS ============ -->
+<section class="band" id="humans">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">07 · Humans and autonomy</span>
+      <h2 class="fluid-h2">A team of about <span class="display-em" id="teamCount">25</span>, managing by exception.</h2>
+      <p class="lede">Humans set intent, hold strategic relationships, make legally reserved decisions and handle exceptions. Agents earn autonomy one rung at a time, on measured accuracy, and can be demoted automatically.</p>
+    </div>
+    <div class="ladder reveal" id="ladder"></div>
+    <div class="grid g2" style="margin-top:28px">
+      <div class="reveal"><div class="table-wrap"><table class="t" id="team"></table></div></div>
+      <div class="reveal d1"><div class="table-wrap"><table class="t" id="exceptions"></table></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DAY IN THE LIFE ============ -->
+<section class="band" id="day">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">08 · A day in the life</span>
+      <h2 class="fluid-h2">From a signed reservation to purchase orders in <span class="display-em">80 minutes</span>.</h2>
+      <p class="lede">Illustrative. Two paths from the concept: the happy path from contract to capacity, and the risk path from an ownership-chain sanctions hit. Step through either one.</p>
+    </div>
+    <div class="row wrap-row" style="margin-bottom:20px"><div class="seg" id="dilTabs"><button aria-pressed="true" data-p="happy">Happy path</button><button aria-pressed="false" data-p="risk">Risk path</button></div><span class="spacer"></span><button class="btn sm" id="dilAuto">▶ Auto-play</button></div>
+    <div class="dil">
+      <div class="steps" id="dilSteps"></div>
+      <div class="card detail" id="dilDetail"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SCENARIOS ============ -->
+<section class="band" id="scenarios">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">09 · Resilience playbooks</span>
+      <h2 class="fluid-h2">16 disruptions. <span class="display-em">Inject any of them</span> into the simulation.</h2>
+      <p class="lede">For each one, the concept sets out what agents do automatically within mandate and what stays with a human. Every card opens the 3D simulation with that disruption scripted in.</p>
+    </div>
+    <div class="grid g4" id="scenGrid"></div>
+  </div>
+</section>
+
+<!-- ============ COLLAPSE ============ -->
+<section class="band" id="collapse">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">10 · Portfolio collapse</span>
+      <h2 class="fluid-h2">140 applications → <span class="display-em">1 platform</span> + ≤10 rails.</h2>
+      <p class="lede">Every legacy category maps to desks over the shared graph. What remains outside is regulated rails and licensed data feeds.</p>
+    </div>
+    <div class="collapse reveal">
+      <div><div class="app-cloud" id="appCloud" aria-label="140 legacy applications"></div><p class="tiny muted" style="margin-top:10px">Each square is one application in a typical legacy portfolio (illustrative)</p></div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="platform"><span class="k"><span data-brand-product>Neocloud</span> Supply OS</span><h3 class="fluid-h3" style="margin:8px 0 10px">Graph · Ledger · Policy · 36 desks · Cockpit</h3><p class="small muted">The rails that stay external: banks, a licensed customs broker, insurers, e-signature, Sayari, official lists, trade data, hazard feeds, commodity indices and carrier APIs.</p><button class="btn sm" id="collapseBtn" style="margin-top:8px">Collapse the portfolio</button></div>
+    </div>
+    <div class="table-wrap reveal" style="margin-top:30px"><table class="t legacy-t" id="legacy"></table></div>
+  </div>
+</section>
+
+<!-- ============ ROADMAP + METRICS ============ -->
+<section class="band" id="roadmap">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">11 · Roadmap and success measures</span>
+      <h2 class="fluid-h2">Seven phases, <span class="display-em">each one ending in a demo</span>.</h2>
+      <p class="lede">All targets are proposals. Baselines are measured first.</p>
+    </div>
+    <div class="road reveal" id="road"></div>
+    <div class="grid g4" id="metrics" style="margin-top:46px"></div>
+  </div>
+</section>
+
+<!-- ============ CTA ============ -->
+<section class="band">
+  <div class="wrap">
+    <div class="cta-band">
+      <div class="aura" aria-hidden="true"></div>
+      <span class="eyebrow">See it run</span>
+      <h2 class="fluid-h2" style="margin-top:14px">Two simulations, <span class="display-em">built on the CoLab method</span>.</h2>
+      <div class="cta-cards">
+        <a class="card card-glow hover" href="simulate.html"><span class="k">3D agentic simulation</span><h3>Watch the desks work</h3><p>Agents move racks, transformers and optics across a 3D globe to synthetic sites. Inject disruptions, approve what reaches the cockpit, and compare the same seeded run against legacy latency.</p><span class="go">simulate.html →</span></a>
+        <a class="card card-glow hover" href="negotiate.html"><span class="k">Negotiation room</span><h3>Agent-to-agent deals</h3><p>Multi-issue negotiation within a mandate, with perspective-filtered channels, a tactic detector, ZOPA readiness checks and 20-trial Monte Carlo runs. It also replays a real CoLab Diplomacy Table recording.</p><span class="go">negotiate.html →</span></a>
+        <a class="card card-glow hover" href="brand.html"><span class="k">Brand kit</span><h3>Swap the dressing</h3><p>Every colour, typeface, radius and effect is a variable. Re-dress the whole demo for a different neocloud in one click, or build and export your own theme.</p><span class="go">brand.html →</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer data-shell="footer"></footer>
+</body>
+</html>

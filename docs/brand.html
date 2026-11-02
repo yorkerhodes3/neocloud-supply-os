@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en" data-ground="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Brand kit · Neocloud Supply OS</title>
+<meta name="description" content="One variable-based design system, many brands. Swap the Neocloud Supply OS demo into CoreWeave, Nebius, OpenAI, Lambda, Crusoe and other neocloud themes, check contrast live, or build your own.">
+<meta property="og:title" content="Brand kit · Neocloud Supply OS">
+<meta property="og:description" content="Every colour, font and radius is a variable. Pick a preset or build a theme, check WCAG contrast, export JSON or CSS.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<script>try{var c=JSON.parse(localStorage.getItem('nso.vars')||'null'),q=new URLSearchParams(location.search).get('brand');if(c&&(!q||q===c.id)){var r=document.documentElement;r.dataset.ground=c.ground;for(var k in c.vars)r.style.setProperty(k,c.vars[k]);}}catch(e){}</script>
+<link rel="stylesheet" href="assets/fonts/fonts.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/site.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+<link rel="stylesheet" href="assets/css/brand.css">
+<script type="module" src="assets/js/pages/brand.js"></script>
+</head>
+<body>
+<a href="#main" class="sr-only">Skip to content</a>
+<header data-shell="nav"></header>
+
+<main id="main">
+<section class="page-hero">
+  <div class="grid-bg" aria-hidden="true"></div>
+  <div class="wrap">
+    <span class="eyebrow">Brand kit</span>
+    <h1 class="fluid-h1">One design system. <span class="display-em">Any brand.</span></h1>
+    <p class="lede">The site starts from the Ethical Tech CoLab design system. Every colour, typeface, radius and glow is a CSS variable. A brand states a few core tokens, and the theme engine derives the rest and enforces WCAG contrast. Add <code>?brand=</code> to any link to dress a demo.</p>
+    <div class="row wrap-row" style="gap:10px">
+      <a class="btn primary btn-sweep" href="#gallery">Pick a preset</a>
+      <a class="btn" href="#builder">Build your own</a>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="gallery">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">01 · Presets</span>
+      <h2 class="fluid-h2">Lab themes and <span class="display-em">neocloud costumes</span>.</h2>
+      <p class="lede">Each card is drawn in its own theme. The neocloud and AI-lab presets approximate public colours and type for demo dressing only. Proprietary typefaces are swapped for open-licensed look-alikes, and no logos are used.</p>
+    </div>
+    <div class="notice" style="margin-bottom:22px"><b>Not affiliated.</b> CoreWeave, Nebius, OpenAI, Lambda, Crusoe, Together AI, Nscale, Fluidstack, Vultr and Voltage Park are trademarks of their owners. They have not reviewed or endorsed these themes. Before showing a theme to that company or its customers, replace it with the official brand guide and licensed assets.</div>
+    <div class="brand-grid" id="brandGrid"></div>
+  </div>
+</section>
+
+<section class="band" id="tokens">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">02 · Active tokens</span>
+      <h2 class="fluid-h2">What <span class="display-em" data-brand-name></span> resolves to.</h2>
+      <p class="lede">These are the variables on the page right now. Contrast is measured live with the WCAG 2.x formula; translucent colours are composited onto the ground first.</p>
+    </div>
+    <div class="tok-layout">
+      <div>
+        <div class="sub-head" style="margin-top:0"><h3 class="fluid-h3">Contrast checks</h3></div>
+        <div class="checks" id="checks"></div>
+        <div class="sub-head"><h3 class="fluid-h3">Type</h3></div>
+        <div class="type-spec" id="typeSpec"></div>
+      </div>
+      <div>
+        <div class="sub-head" style="margin-top:0"><h3 class="fluid-h3">Variables</h3><button class="btn sm" id="copyCss" type="button">Copy as CSS</button></div>
+        <div class="table-wrap tok-table"><table class="t" id="tokTable"><thead><tr><th>Variable</th><th>Value</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="builder">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">03 · Builder</span>
+      <h2 class="fluid-h2">Dress a demo <span class="display-em">in two minutes</span>.</h2>
+      <p class="lede">Set the ground, five colours, three typefaces and a radius. The preview updates as you type. Apply it to the whole site, or export JSON for <code>themes.js</code> and CSS for anywhere else.</p>
+    </div>
+    <div class="builder">
+      <form class="panel builder-form" id="builderForm" autocomplete="off">
+        <div class="panel-head"><h4>Core tokens</h4><span class="spacer"></span><select id="startFrom" aria-label="Start from a preset" style="width:auto"></select></div>
+        <div class="panel-body form-grid">
+          <label class="field span2">Name<input type="text" name="name" maxlength="40"></label>
+          <div class="field span2"><span>Ground</span><div class="seg" role="group" aria-label="Ground"><button type="button" data-ground="dark" aria-pressed="true">Dark</button><button type="button" data-ground="light" aria-pressed="false">Light</button></div></div>
+          <label class="field">Background<span class="color-in"><input type="color" name="bg"><input type="text" name="bgHex" maxlength="7" spellcheck="false"></span></label>
+          <label class="field">Text<span class="color-in"><input type="color" name="fg"><input type="text" name="fgHex" maxlength="7" spellcheck="false"></span></label>
+          <label class="field">Accent<span class="color-in"><input type="color" name="accent"><input type="text" name="accentHex" maxlength="7" spellcheck="false"></span></label>
+          <label class="field">Glow<span class="color-in"><input type="color" name="glow"><input type="text" name="glowHex" maxlength="7" spellcheck="false"></span></label>
+          <label class="field">Second glow<span class="color-in"><input type="color" name="glow2"><input type="text" name="glow2Hex" maxlength="7" spellcheck="false"></span></label>
+          <label class="field">Button text<select name="ink"><option value="auto">Automatic</option><option value="#ffffff">Light</option><option value="#0b0b0f">Dark</option></select></label>
+          <label class="field">Display typeface<select name="fontDisplay"></select></label>
+          <label class="field">Body typeface<select name="fontBody"></select></label>
+          <label class="field">Mono typeface<select name="fontMono"></select></label>
+          <label class="field">Display weight<select name="displayWeight"><option>400</option><option>500</option><option>600</option><option>700</option></select></label>
+          <label class="switch span2"><input type="checkbox" name="upper"> Uppercase display type</label>
+          <label class="field span2"><span class="lab-row">Corner radius <output id="radiusOut"></output></span><input type="range" name="radius" min="0" max="28" step="1"></label>
+          <label class="switch span2"><input type="checkbox" name="pill" checked> Pill-shaped buttons and chips</label>
+        </div>
+        <div class="panel-body builder-actions">
+          <button class="btn primary" type="button" id="applyCustom">Apply to the whole site</button>
+          <button class="btn" type="button" id="exportJson">Copy JSON</button>
+          <button class="btn" type="button" id="exportCss">Copy CSS</button>
+          <button class="btn ghost" type="button" id="importToggle">Import JSON</button>
+        </div>
+        <div class="panel-body import" id="importBox" hidden>
+          <label class="field">Paste a theme exported from this page<textarea id="importText" rows="5" spellcheck="false"></textarea></label>
+          <button class="btn sm" type="button" id="importGo">Load into the builder</button>
+        </div>
+      </form>
+
+      <div class="preview-wrap">
+        <div class="preview" id="preview" aria-label="Live preview"></div>
+        <div class="checks compact" id="previewChecks" aria-live="polite"></div>
+        <p class="small muted" id="adjustNote"></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="howto">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">04 · For developers</span>
+      <h2 class="fluid-h2">How a theme <span class="display-em">flows</span>.</h2>
+    </div>
+    <div class="grid g4" id="flow"></div>
+  </div>
+</section>
+</main>
+
+<footer data-shell="footer"></footer>
+</body>
+</html>

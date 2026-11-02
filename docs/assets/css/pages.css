@@ -1,0 +1,73 @@
+/* Shared styles for secondary pages (method, brand). Uses only theme variables. */
+
+.fluid-h1 { font-size: clamp(2.6rem, 7vw, 5.6rem); line-height: calc(var(--display-leading) + 0.02); max-width: 18ch; }
+.page-hero { position: relative; overflow: hidden; padding: clamp(84px, 12vw, 150px) 0 clamp(56px, 8vw, 96px); border-bottom: 1px solid var(--border); }
+.page-hero .grid-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.page-hero .wrap { position: relative; z-index: 1; display: grid; gap: 22px; }
+.page-hero .lede { font-size: clamp(1.05rem, 1.6vw, 1.25rem); max-width: 62ch; }
+.sub-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 18px; margin: 54px 0 16px; }
+.sub-head p { margin: 0; font-size: .78rem; }
+.badge.info { background: color-mix(in oklab, var(--info) 18%, transparent); border-color: color-mix(in oklab, var(--info) 50%, transparent); }
+
+/* Truth strip */
+.truth-strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
+.truth-tile { text-align: left; display: grid; gap: 8px; align-content: start; padding: 18px; border-radius: var(--radius); border: 1px solid var(--border); background: color-mix(in oklab, var(--card) 80%, transparent); cursor: pointer; transition: border-color .25s, transform .35s var(--ease); }
+.truth-tile:hover { border-color: var(--border-strong); transform: translateY(-2px); }
+.truth-tile .badge { justify-self: start; }
+.truth-tile b { font-family: var(--font-display); font-weight: var(--display-weight); font-size: 2.6rem; line-height: .9; letter-spacing: var(--display-tracking); }
+.truth-tile p { margin: 0; font-size: .74rem; color: var(--muted); line-height: 1.45; }
+@media (max-width: 860px) { .truth-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+table.truth td:first-child { min-width: 220px; }
+table.truth td:nth-child(2) { white-space: nowrap; }
+table.num td.mono { white-space: nowrap; font-size: .74rem; }
+table.num td.mono b { color: var(--fg); }
+.ratio { display: inline-flex; align-items: center; gap: 8px; min-width: 104px; }
+.ratio::before { content: ""; width: var(--w); flex: none; height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--accent), var(--glow-2)); }
+
+/* Pipeline */
+.pipeline { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; counter-reset: s; }
+.pipeline .step { position: relative; display: grid; gap: 14px; align-content: start; padding: 20px 18px; border: 1px solid var(--border); border-radius: var(--radius); background: color-mix(in oklab, var(--card) 85%, transparent); }
+.pipeline .step::after { content: ""; position: absolute; top: 36px; right: -15px; width: 16px; height: 1.5px; background: var(--border-strong); }
+.pipeline .step:last-child::after, .pipeline .step.side::after { display: none; }
+.pipeline .step .dot { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-mono); font-size: .8rem; font-weight: 700; border: 1.5px solid var(--border-strong); color: var(--muted); }
+.pipeline .step.done .dot { background: var(--ok); border-color: var(--ok); color: var(--bg); }
+.pipeline .step.now { border-color: color-mix(in oklab, var(--accent) 60%, var(--border)); box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent) 30%, transparent), 0 20px 50px -30px var(--glow); }
+.pipeline .step.now .dot { border-color: var(--accent); color: var(--accent); animation: pulse-ring 2.4s var(--ease) infinite; }
+.pipeline .step.side { border-style: dashed; background: transparent; }
+.pipeline .step h3 { font-size: 1.22rem; line-height: 1.05; margin: 4px 0 8px; word-break: break-word; }
+.pipeline .step p { font-size: .76rem; color: var(--muted); margin: 0; line-height: 1.5; }
+.pipeline .step .k { font-family: var(--font-mono); font-size: .6rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.pipeline .step.now .k { color: var(--accent); }
+@keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent) 50%, transparent); } 70%, 100% { box-shadow: 0 0 0 12px transparent; } }
+@media (max-width: 1100px) { .pipeline { grid-template-columns: repeat(2, minmax(0, 1fr)); } .pipeline .step::after { display: none; } }
+@media (max-width: 600px) { .pipeline { grid-template-columns: minmax(0, 1fr); } }
+
+.live-check { margin-top: 18px; font-size: .8rem; line-height: 1.55; }
+
+/* Scenario catalogue */
+.scn-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 980px) { .scn-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .scn-grid { grid-template-columns: minmax(0, 1fr); } }
+.mscn { display: flex; flex-direction: column; gap: 10px; padding: 18px; }
+.mscn-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.mscn .num { font-family: var(--font-display); font-weight: var(--display-weight); font-size: 1.9rem; line-height: .9; color: var(--accent); }
+.mscn h3 { font-size: 1.2rem; line-height: 1.06; margin: 0; }
+.mscn p { margin: 0; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.mscn .lags { display: grid; gap: 4px; border-top: 1px dashed var(--border); padding-top: 10px; font-size: .72rem; font-family: var(--font-mono); color: var(--muted); }
+.mscn .lags b { color: var(--fg); }
+.mscn .lags i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 7px; vertical-align: 1px; }
+.mscn .lags i.ok { background: var(--ok); } .mscn .lags i.risk { background: var(--risk); }
+.go { margin-top: auto; font-family: var(--font-mono); font-size: .66rem; letter-spacing: .06em; color: var(--accent); }
+a.card .go { display: inline-block; padding-top: 8px; }
+
+.cta-inline { grid-column: 1 / -1; display: flex; justify-content: center; margin-top: 18px; }
+
+/* Limits */
+.limits { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 40px; }
+.limit { display: grid; grid-template-columns: auto 1fr; gap: 18px; padding: 22px 0; border-top: 1px solid var(--border); }
+.limit .n { font-family: var(--font-mono); font-size: .72rem; color: var(--accent); padding-top: 5px; }
+.limit h3 { font-size: 1.35rem; margin-bottom: 8px; }
+.limit p { margin: 0; font-size: .86rem; line-height: 1.55; }
+@media (max-width: 760px) { .limits { grid-template-columns: minmax(0, 1fr); } }

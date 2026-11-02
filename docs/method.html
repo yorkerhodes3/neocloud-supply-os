@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en" data-ground="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Method &amp; limits · Neocloud Supply OS</title>
+<meta name="description" content="What is real, modelled, illustrative and fictional in the Neocloud Supply OS demo: the Ethical Tech CoLab method, how the simulation and negotiation work, every assumption and the limits.">
+<meta property="og:title" content="Method &amp; limits · Neocloud Supply OS">
+<meta property="og:description" content="Every number on this site is labelled real, modelled, illustrative or fictional. Here is which, and why.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<script>try{var c=JSON.parse(localStorage.getItem('nso.vars')||'null'),q=new URLSearchParams(location.search).get('brand');if(c&&(!q||q===c.id)){var r=document.documentElement;r.dataset.ground=c.ground;for(var k in c.vars)r.style.setProperty(k,c.vars[k]);}}catch(e){}</script>
+<link rel="stylesheet" href="assets/fonts/fonts.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/site.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+<script type="module" src="assets/js/pages/method.js"></script>
+</head>
+<body>
+<a href="#main" class="sr-only">Skip to content</a>
+<header data-shell="nav"></header>
+
+<main id="main">
+<section class="page-hero">
+  <div class="grid-bg" aria-hidden="true"></div>
+  <div class="wrap">
+    <span class="eyebrow">Method &amp; limits</span>
+    <h1 class="fluid-h1">What is real, what is modelled, <span class="display-em">and what is made up</span>.</h1>
+    <p class="lede">This site is a concept demo. It makes claims about latency, capacity and risk, so every element is labelled. If a number matters to a decision, it needs real data first.</p>
+    <div class="truth-strip" id="truthStrip"></div>
+  </div>
+</section>
+
+<section class="band" id="colab">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">01 · The CoLab method</span>
+      <h2 class="fluid-h2">Think in documents. <span class="display-em">Review with a human.</span> Then build.</h2>
+      <p class="lede">The project follows the <a class="inline" href="https://github.com/Ethical-Tech-CoLab/project-startup-guide">Ethical Tech CoLab project startup guide</a>: each document passes a human review gate before the next one starts. This site was built in parallel at the reviewer's request, to make the concept and specification easier to review. It is not the product.</p>
+    </div>
+    <ol class="pipeline" id="pipeline"></ol>
+  </div>
+</section>
+
+<section class="band" id="truth">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">02 · The truth table</span>
+      <h2 class="fluid-h2">Four labels, <span class="display-em">used everywhere</span>.</h2>
+      <p class="lede">Real means it exists and you can check it. Modelled means a deliberate estimate that drives the result. Illustrative means a plausible placeholder that does not change the comparison. Fictional means invented to protect real parties.</p>
+    </div>
+    <div class="filters" id="truthFilters" role="group" aria-label="Filter by label"></div>
+    <div class="table-wrap"><table class="t truth" id="truthTable"><thead><tr><th>Element</th><th>Label</th><th>Source or basis</th><th>Notes</th></tr></thead><tbody></tbody></table></div>
+  </div>
+</section>
+
+<section class="band" id="engine">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">03 · How the simulation works</span>
+      <h2 class="fluid-h2">One physical world, <span class="display-em">two ways of running it</span>.</h2>
+      <p class="lede">A deterministic discrete-event simulation follows every rack lot, optics lot, switch lot, cooling set, switchgear line-up, transformer and hall from contract to billable capacity. It runs entirely in your browser and in <code>node --test</code>.</p>
+    </div>
+    <div class="grid g3" id="engineCards"></div>
+
+    <div class="sub-head"><h3 class="fluid-h3">What the scoreboard measures</h3><p class="muted">At the day shown, or day <span id="reportDay"></span> for revenue comparisons.</p></div>
+    <div class="table-wrap"><table class="t" id="kpiDefs"><thead><tr><th>Metric</th><th>Definition</th><th>Why it matters</th></tr></thead><tbody></tbody></table></div>
+
+    <div class="sub-head"><h3 class="fluid-h3">Administrative latency</h3><p class="muted">Triangular distributions (min · <b>mode</b> · max), read live from the engine. Bar length is the log of the ratio.</p></div>
+    <div class="table-wrap"><table class="t num" id="adminTable"><thead><tr><th>Step</th><th>Agent-native</th><th>Legacy (modelled)</th><th>Ratio (mode)</th></tr></thead><tbody></tbody></table></div>
+
+    <div class="sub-head"><h3 class="fluid-h3">Every assumption</h3><p class="muted">The same table appears under the simulation.</p></div>
+    <div class="table-wrap"><table class="t" id="assumptions"><thead><tr><th>Step</th><th>Agent-native</th><th>Legacy</th><th>Label</th></tr></thead><tbody></tbody></table></div>
+  </div>
+</section>
+
+<section class="band" id="scenarios">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">04 · Scenario catalogue</span>
+      <h2 class="fluid-h2">Seventeen disruptions, <span class="display-em">each one a link</span>.</h2>
+      <p class="lede">Each scenario comes from the concept's scenario table. Onset days and detection lags are modelled. Open any of them in the simulation with the same seed and you get the same run.</p>
+    </div>
+    <div class="scn-grid" id="scnGrid"></div>
+  </div>
+</section>
+
+<section class="band" id="negotiation">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">05 · How the negotiation room works</span>
+      <h2 class="fluid-h2">Deals inside a mandate, <span class="display-em">with a referee</span>.</h2>
+      <p class="lede">The negotiation room adapts the CoLab <a class="inline" href="https://github.com/Ethical-Tech-CoLab/diplomatic-simulator">diplomatic simulator</a> and <a class="inline" href="https://github.com/Ethical-Tech-CoLab/diplomacy-table-live">Diplomacy Table</a> to supplier deals. Our Negotiator desk and a supplier's agent trade across several issues at once. Each side sees only its own channel. A referee flags tactics, checks for a zone of agreement and escalates to a human when the mandate would be breached.</p>
+    </div>
+    <div class="grid g3" id="negoCards"></div>
+  </div>
+</section>
+
+<section class="band" id="limits">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">06 · Limits</span>
+      <h2 class="fluid-h2">What this demo <span class="display-em">does not</span> show.</h2>
+    </div>
+    <div class="limits" id="limitsList"></div>
+  </div>
+</section>
+
+<section class="band" id="lineage">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">07 · Lineage</span>
+      <h2 class="fluid-h2">Built on <span class="display-em">Ethical Tech CoLab</span> work.</h2>
+      <p class="lede">The method, the simulation patterns, the negotiation mechanics and the design system all come from CoLab projects, adapted for a supply chain.</p>
+    </div>
+    <div class="grid g3" id="lineageCards"></div>
+  </div>
+</section>
+</main>
+
+<footer data-shell="footer"></footer>
+</body>
+</html>

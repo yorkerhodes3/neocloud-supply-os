@@ -1,0 +1,14 @@
+{
+  "name": "neocloud-supply-os",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI-native, agent-first supply chain OS for a neocloud: concept, specification and a static demo site (agentic simulation, negotiation room, brand kit).",
+  "type": "module",
+  "license": "UNLICENSED",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "test": "node --test test/",
+    "serve": "python3 -m http.server 8765 --bind 127.0.0.1 --directory docs",
+    "build:data": "node tools/build-data.mjs"
+  }
+}

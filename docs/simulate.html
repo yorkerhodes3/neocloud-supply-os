@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en" data-ground="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agentic simulation · Neocloud Supply OS</title>
+<meta name="description" content="Watch a fleet of mandated agents turn three signed GPU contracts into billable capacity, against a modelled legacy operating model facing the same physical world. Sixteen disruption scenarios, a human decision queue, every number modelled and every run reproducible from a link.">
+<meta property="og:title" content="Neocloud Supply OS · Agentic simulation">
+<meta property="og:description" content="Contract to capacity, run by agents. Same seed, same physical world; only the operating model differs.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<script>try{var c=JSON.parse(localStorage.getItem('nso.vars')||'null'),q=new URLSearchParams(location.search).get('brand');if(c&&(!q||q===c.id)){var r=document.documentElement;r.dataset.ground=c.ground;for(var k in c.vars)r.style.setProperty(k,c.vars[k]);}}catch(e){}</script>
+<link rel="stylesheet" href="assets/fonts/fonts.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/site.css">
+<link rel="stylesheet" href="assets/css/sim.css">
+<script defer src="assets/vendor/deck/deck.min.js"></script>
+<script type="module" src="assets/js/pages/simulate.js"></script>
+</head>
+<body class="page-sim">
+<a href="#stage" class="sr-only">Skip to simulation</a>
+<header data-shell="nav"></header>
+
+<main id="main">
+<section class="sim-stage" id="stage" aria-label="Agentic supply-chain simulation">
+  <div class="sim-map" id="map" data-view="globe" role="img" aria-label="3D view of the supply network. Use the ledger and scoreboard for a text equivalent."></div>
+  <div class="sim-vignette" aria-hidden="true"></div>
+  <div class="sim-fallback" id="fallback" hidden>
+    <div class="notice"><b>3D view unavailable.</b> This browser did not give us WebGL, so the globe and campus are off. The simulation, scoreboard, ledger and decisions all still run.</div>
+  </div>
+
+  <!-- left rail: scenario + controls -->
+  <aside class="sim-rail left" aria-label="Scenario and controls">
+    <div class="sim-card brief-card">
+      <div class="panel-head"><h4>Scenario</h4><span class="spacer"></span><span class="badge" id="watchBadge">Watching · Agent-native</span></div>
+      <div class="panel-body">
+        <label class="field">Disruption to inject<select id="scenario"></select></label>
+        <div class="brief" id="brief"></div>
+      </div>
+    </div>
+    <div class="sim-card ctl-card">
+      <div class="panel-head"><h4>Controls</h4><span class="spacer"></span><button class="btn sm ghost" id="kbdBtn" data-tip="Space play/pause · ←/→ one day (Shift: ten) · R reset · L switch run · G globe · C campus · 1–3 site · O orbit · H home · +/− speed">⌨ Keys</button></div>
+      <div class="panel-body ctl">
+        <div class="ctl-row"><span class="k" data-tip="Both runs always advance together; this picks which one you see on the map, ledger and desks.">Watch</span>
+          <div class="seg" id="watchSeg" role="group" aria-label="Which run to watch"><button data-v="native">Agent-native</button><button data-v="legacy">Legacy</button></div></div>
+        <div class="ctl-row"><span class="k" data-tip="A claim, not a fact: the agent-native run calls off rack lots just in time (p80 lead + buffer before forecast hall-ready). ASAP orders everything at once, like the legacy run.">Call-off</span>
+          <div class="seg" id="policySeg" role="group" aria-label="Rack call-off policy"><button data-v="jit">Just-in-time</button><button data-v="asap">ASAP</button></div></div>
+        <div class="ctl-row"><span class="k" data-tip="Earned: desks act inside their mandate (L3). Approve-every-step: a human approves each screen, award and PO, the way autonomy starts on day one.">Autonomy</span>
+          <div class="seg" id="autonomySeg" role="group" aria-label="Agent autonomy"><button data-v="earned">Earned (L3)</button><button data-v="dayone">Approve every step</button></div></div>
+        <label class="switch" data-tip="On: exceptions resolve with the recommended option after a modelled human delay. Off: the run pauses and waits for you in the Decisions tab.">
+          <input type="checkbox" id="autoResolve"> Auto-resolve exceptions (modelled human)</label>
+        <div class="ctl-row seed-row">
+          <label class="field seed"><span>Seed</span><input type="number" id="seed" min="1" max="99999" inputmode="numeric"></label>
+          <button class="btn sm" id="reseed" data-tip="New random seed: a different physical world, same rules">↻ New world</button>
+          <button class="btn sm primary" id="link" data-tip="Copy a link that reproduces this exact run">Link</button>
+        </div>
+        <div class="ctl-row"><span class="k">View</span>
+          <div class="seg" id="viewSeg" role="group" aria-label="Map view"><button data-v="globe">Globe</button><button data-v="campus">Campus</button></div>
+          <div class="seg" id="siteSeg" role="group" aria-label="Campus site"></div></div>
+        <div class="chips layer-chips" id="layerChips" role="group" aria-label="Map layers"></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- right rail: scoreboard + ledger / decisions / desks -->
+  <aside class="sim-rail right" aria-label="Scoreboard and operations">
+    <div class="sim-card score-card">
+      <div class="panel-head"><h4>Scoreboard · day <b id="scoreDay">0</b></h4><span class="spacer"></span><span class="tiny muted" data-tip="Both runs use common random numbers: manufacture, transit, construction and failures are identical. Only administrative latency and the response to disruption differ.">same physical world ⓘ</span></div>
+      <div class="panel-body">
+        <table class="kpi" id="kpi" aria-label="Agent-native versus legacy key results"></table>
+      </div>
+    </div>
+    <div class="sim-card tabs-card">
+      <div class="tabbar" role="tablist" aria-label="Operations">
+        <button role="tab" id="tab-chart" aria-controls="pane-chart" aria-selected="true" data-tab="chart">Trajectory</button>
+        <button role="tab" id="tab-ledger" aria-controls="pane-ledger" aria-selected="false" data-tab="ledger">Ledger</button>
+        <button role="tab" id="tab-decisions" aria-controls="pane-decisions" aria-selected="false" data-tab="decisions">Decisions <span class="count" id="decCount">0</span></button>
+        <button role="tab" id="tab-desks" aria-controls="pane-desks" aria-selected="false" data-tab="desks">Desks</button>
+      </div>
+      <div class="tabpane" id="pane-chart" role="tabpanel" aria-labelledby="tab-chart">
+        <figure class="chart-wrap">
+          <figcaption class="chart-title tiny">GPUs billable over 240 days</figcaption>
+          <svg id="chart" class="chart" viewBox="0 0 380 170" preserveAspectRatio="none" role="img" aria-label="Billable GPUs over time for both runs"></svg>
+          <figcaption class="legend tiny"><span><i class="ln n"></i>Agent-native</span><span><i class="ln l"></i>Legacy</span><span><i class="ln p"></i>projection (auto-resolve)</span><span><i class="tick"></i>need-by</span></figcaption>
+        </figure>
+      </div>
+      <div class="tabpane" id="pane-ledger" role="tabpanel" aria-labelledby="tab-ledger" hidden>
+        <div class="ledger-filters" id="ledgerFilters"></div>
+        <ol class="ledger" id="ledger" aria-live="off"></ol>
+      </div>
+      <div class="tabpane" id="pane-decisions" role="tabpanel" aria-labelledby="tab-decisions" hidden><div id="decisions"></div></div>
+      <div class="tabpane" id="pane-desks" role="tabpanel" aria-labelledby="tab-desks" hidden><div class="sim-desks" id="desks"></div></div>
+    </div>
+  </aside>
+
+  <div class="sim-callouts" id="callouts" aria-live="polite"></div>
+  <div class="map-legend" id="mapLegend" aria-hidden="true"></div>
+
+  <!-- transport + timeline -->
+  <div class="sim-bar" role="group" aria-label="Playback">
+    <button class="btn icon primary play" id="play" aria-label="Play" title="Play / pause (Space)"><span class="i-play">▶</span><span class="i-pause">❚❚</span></button>
+    <button class="btn icon" id="back" aria-label="Back one day" title="Back one day (←)">⏮</button>
+    <button class="btn icon" id="fwd" aria-label="Forward one day" title="Forward one day (→)">⏭</button>
+    <button class="btn icon" id="reset" aria-label="Reset to day 0" title="Reset (R)">⟲</button>
+    <div class="clock"><b id="day">Day 0</b><span id="clockSub">00:00 · of 240</span></div>
+    <div class="timeline" id="timeline">
+      <div class="tl-track"><div class="tl-fill" id="tlFill"></div></div>
+      <div class="tl-marks" id="marks"></div>
+      <input type="range" id="scrub" min="0" max="240" step="0.25" value="0" aria-label="Simulation day">
+    </div>
+    <label class="field speed"><span>Speed <output id="speedOut">3 d/s</output></span><input type="range" id="speed" min="0.25" max="12" step="0.25" value="3" aria-label="Days per second"></label>
+    <button class="btn icon" id="orbitBtn" aria-pressed="true" aria-label="Orbit camera" title="Orbit camera (O)">⟳</button>
+    <button class="btn icon" id="homeBtn" aria-label="Reset camera" title="Reset camera (H)">⌂</button>
+  </div>
+</section>
+
+<!-- ============ READ THE RUN ============ -->
+<section class="band" id="read" aria-labelledby="read-title">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow">How to read it</span>
+      <h2 id="read-title" class="fluid-h2">One physical world. Two operating models.</h2>
+      <p class="lede">Both runs face the same factories, ships, storms and failures, drawn from the same random numbers. The only differences are how fast each organisation notices, decides and talks to suppliers, and what it is allowed to do about a problem. Everything you see is modelled; nothing here is a forecast.</p>
+    </div>
+    <div class="grid g3 read-grid">
+      <article class="card reveal"><span class="k">On the globe</span><h3 class="fluid-h3">Supply network</h3>
+        <ul class="key" id="globeKey"></ul></article>
+      <article class="card reveal d1"><span class="k">In the campus</span><h3 class="fluid-h3">Every rack, every state</h3>
+        <ul class="key" id="campusKey"></ul></article>
+      <article class="card reveal d2"><span class="k">Controls are claims</span><h3 class="fluid-h3">Presets you can test</h3>
+        <ul class="plain">
+          <li><b>Just-in-time vs ASAP.</b> Ordering everything early hedges some shocks by accident and pays for it in idle capital. Switch and compare.</li>
+          <li><b>Earned vs day-one autonomy.</b> Day one, a human approves every screen, award and PO. The scoreboard shows what that costs.</li>
+          <li><b>Auto-resolve off.</b> You become the exception handler. The clock does not stop while you think, and nor does it in real life.</li>
+          <li><b>Link.</b> The URL carries scenario, seed, presets and day, so anyone can reproduce your run exactly.</li>
+        </ul></article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CLAIMS ============ -->
+<section class="band" id="claims" aria-labelledby="claims-title">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow">Claims, checked live</span>
+      <h2 id="claims-title" class="fluid-h2">What this page claims, and whether it holds at seed <span id="claimSeed">42</span></h2>
+      <p class="lede">Following the CoLab rule that a simulation's presets are written claims, each one is re-run in your browser for the current seed. If a claim fails, it says so.</p>
+    </div>
+    <ol class="claims" id="claimList"><li class="muted">Running…</li></ol>
+  </div>
+</section>
+
+<!-- ============ SWEEP ============ -->
+<section class="band" id="sweep" aria-labelledby="sweep-title">
+  <div class="wrap-wide">
+    <div class="section-head reveal" style="margin-inline:auto;max-width:1180px">
+      <span class="eyebrow">All sixteen disruptions</span>
+      <h2 id="sweep-title" class="fluid-h2">Every scenario, both runs, this seed</h2>
+      <p class="lede">Run headless in your browser (34 simulations). Native uses your current call-off and autonomy presets and auto-resolves exceptions. Click a row to load it above.</p>
+    </div>
+    <div class="table-wrap reveal"><table class="t sweep" id="sweepTable"></table></div>
+  </div>
+</section>
+
+<!-- ============ ASSUMPTIONS ============ -->
+<section class="band" id="assumptions" aria-labelledby="as-title">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow">Method</span>
+      <h2 id="as-title" class="fluid-h2">Assumptions, in the open</h2>
+      <p class="lede">Administrative latencies are triangular distributions (min, mode, max). Physical durations are shared between the runs. Change them in <code>assets/js/sim/engine.js</code>; the tests in <code>test/sim.test.mjs</code> pin the invariants.</p>
+    </div>
+    <div class="table-wrap reveal"><table class="t" id="assumpTable"></table></div>
+    <div class="grid g2 limits">
+      <article class="card reveal"><span class="k">Honest limits</span>
+        <ul class="plain">
+          <li>Every supplier, site, contract, quantity and event is synthetic. Places are real so distances are honest; nothing describes a real company's supply chain.</li>
+          <li>No Sayari data is included. Screening, ownership and trade signals are simulated using Sayari's documented risk-factor categories and MCP tool names.</li>
+          <li>The legacy run is a model of an email-and-approvals operating model, calibrated from public practice, not a measurement of any organisation.</li>
+          <li>One rack is one 72-GPU rack-scale system; costs and contract rates are illustrative round numbers.</li>
+          <li>Not an operational tool. It is built to make an argument testable, not to plan a real build.</li>
+        </ul></article>
+      <article class="card reveal d1"><span class="k">Lineage</span>
+        <ul class="plain">
+          <li>Built on the <a class="inline" href="https://github.com/Ethical-Tech-CoLab/3d-agentic-evacuation-simulation">CoLab 3D agentic evacuation simulation</a>: deck.gl over a basemap, agents with lifecycle states, independent axes, presets as written claims, URL-reproducible runs, camera orbit and tested invariants.</li>
+          <li>Supplier negotiations live in the <a class="inline" href="negotiate.html">negotiation room</a>, modelled on the CoLab <a class="inline" href="https://github.com/Ethical-Tech-CoLab/diplomatic-simulator">diplomatic simulator</a> and the <a class="inline" href="https://github.com/Ethical-Tech-CoLab/diplomacy-table-live">Diplomacy Table</a>.</li>
+          <li>The operating model, the 36 desks and the 16 playbooks come from <a class="inline" href="https://github.com/yorkerhodes3/neocloud-supply-os/blob/main/CONCEPT-IDEA.md">CONCEPT-IDEA.md</a>.</li>
+        </ul></article>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer data-shell="footer"></footer>
+</body>
+</html>

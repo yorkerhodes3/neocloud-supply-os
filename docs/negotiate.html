@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en" data-ground="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Negotiation room: agent-to-agent, inside a mandate · Neocloud Supply OS</title>
+<meta name="description" content="Watch the Neocloud Supply OS Negotiator desk bargain with supplier agents under a signed mandate: log-rolling offers, AC_next acceptance, a Policy Engine gate, human escalation, perspective-redacted transcripts and a rule-based tactic detector.">
+<meta property="og:title" content="Negotiation room · Neocloud Supply OS">
+<meta property="og:description" content="Agent-to-agent negotiation inside a mandate: utility space, Pareto frontier, Nash point, ZOPA readiness and perspective-filtered NDJSON exports.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<script>try{var c=JSON.parse(localStorage.getItem('nso.vars')||'null'),q=new URLSearchParams(location.search).get('brand');if(c&&(!q||q===c.id)){var r=document.documentElement;r.dataset.ground=c.ground;for(var k in c.vars)r.style.setProperty(k,c.vars[k]);}}catch(e){}</script>
+<link rel="stylesheet" href="assets/fonts/fonts.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/nego.css">
+<script type="module" src="assets/js/pages/negotiate.js"></script>
+</head>
+<body class="page-nego">
+<a href="#room" class="sr-only">Skip to the negotiation room</a>
+<header data-shell="nav"></header>
+
+<main id="main">
+<!-- ============ HERO ============ -->
+<section class="band nego-hero" aria-labelledby="nego-title">
+  <div class="aura" aria-hidden="true"></div>
+  <div class="grid-bg" aria-hidden="true"></div>
+  <div class="wrap">
+    <span class="eyebrow reveal">Negotiator desk · S2P · <span data-brand-name></span> edition</span>
+    <h1 id="nego-title" class="fluid-hero reveal d1">Negotiation room<span class="l2">Agent-to-agent, inside a mandate.</span></h1>
+    <p class="lede reveal d2">Our <b>Negotiator desk</b> bargains with supplier agents under a <b>signed mandate</b>: it may award within the should-cost band up to a cap on approved-vendor parts, and nothing else. Every offer passes the <b>Policy Engine</b>. Anything better that needs more room goes to a <b>named human</b>. Pick a deal, press play and watch both sides concede, log-roll and settle, or walk away.</p>
+    <div class="cta reveal d3">
+      <a class="btn primary btn-sweep" href="#room">Enter the room ↓</a>
+      <a class="btn" href="#mc">Run 20 trials</a>
+      <a class="btn ghost" href="#method">Method &amp; limits</a>
+    </div>
+
+    <ol class="guardrails reveal" aria-label="Negotiation guardrails (CONCEPT-IDEA Appendix E8)">
+      <li><span class="gn">01</span><b>Says it is an AI agent and names its mandate</b><span>in every outbound message <code>FR-ENV-005</code></span></li>
+      <li><span class="gn">02</span><b>Walk-away points come from should-cost and policy</b><span>never improvised <code>FR-S2P-004</code> <code>OQ-25</code></span></li>
+      <li><span class="gn">03</span><b>No deceptive tactics</b><span>no false deadlines, no invented competing offers; transcripts go to the Auditor <code>FR-S2P-005</code></span></li>
+      <li><span class="gn">04</span><b>Information barriers between suppliers</b><span>Envoy blocks another supplier's price or terms <code>FR-ENV-007</code></span></li>
+      <li><span class="gn">05</span><b>Strategic suppliers keep a named human owner</b><span>agents prepare, humans negotiate <code>FR-S2P-008</code> <code>HITL-05</code></span></li>
+      <li><span class="gn">06</span><b>Beyond the mandate → a named human</b><span>out-of-mandate award: nothing is sent <code>FR-S2P-007</code> <code>HITL-04</code></span></li>
+    </ol>
+
+    <p class="lineage tiny muted reveal">Lineage: the room follows the Ethical Tech CoLab <a class="inline" href="https://github.com/Ethical-Tech-CoLab/diplomacy-table-live" rel="noopener">Diplomacy Table</a> (a neutral table twin, isolated team twins with private briefs, plenary and caucus channels, perspective-filtered exports, a rule-based tactic detector and ZOPA readiness) and the CoLab <a class="inline" href="https://github.com/Ethical-Tech-CoLab/diplomatic-simulator" rel="noopener">diplomatic simulator</a> (Monte Carlo reported as counts, honest limits). The recorded replay is MIT-licensed CoLab data. The four synthetic counterparties are fictional.</p>
+  </div>
+</section>
+
+<!-- ============ LIVE ROOM ============ -->
+<section class="band room-band" id="room" aria-labelledby="room-title">
+  <div class="wrap-wide">
+    <div class="room-head">
+      <div>
+        <span class="eyebrow">Live room</span>
+        <h2 id="room-title" class="fluid-h2">Four live deals and one recording.</h2>
+      </div>
+      <p class="small muted room-note" id="roomNote">Deterministic: the same scenario, seed and styles always give the same transcript, byte for byte.</p>
+    </div>
+
+    <div class="room" id="roomGrid">
+      <!-- left: scenario, controls, mandate -->
+      <aside class="room-col room-left" aria-label="Scenario, controls and mandate">
+        <div class="panel">
+          <div class="panel-head"><h4>Scenario</h4><span class="spacer"></span><span class="tiny muted" id="scnCount"></span></div>
+          <div class="panel-body"><div class="scn-list" id="scnList" role="group" aria-label="Choose a scenario"></div></div>
+        </div>
+
+        <div class="panel" id="controlsPanel">
+          <div class="panel-head"><h4>Controls</h4><span class="spacer"></span><span class="tiny muted" id="runState">ready</span></div>
+          <div class="panel-body stack controls">
+            <div class="play-row">
+              <button class="btn primary" type="button" id="btnPlay" aria-pressed="false">▶ Play</button>
+              <button class="btn" type="button" id="btnStep">Step</button>
+              <button class="btn ghost" type="button" id="btnReset">Reset</button>
+            </div>
+            <label class="field">Speed <output id="speedOut">1×</output><input type="range" id="speed" min="0" max="4" step="1" value="2"></label>
+            <div class="ctl-synth" id="ctlSynth">
+              <div class="seed-row">
+                <label class="field">Seed<input type="number" id="seed" min="0" max="999999" step="1" value="42" inputmode="numeric"></label>
+                <button class="btn sm" type="button" id="btnLink" data-tip="Copy a link that reproduces this run (scenario, seed, styles, rounds)">Link</button>
+                <button class="btn sm icon" type="button" id="btnShuffle" aria-label="New random seed" data-tip="New seed">⟳</button>
+              </div>
+              <div class="field-g">
+                <span class="field-l" id="lblThem">Counterpart style</span>
+                <div class="seg seg-wrap" id="segThem" role="group" aria-labelledby="lblThem"></div>
+              </div>
+              <div class="field-g">
+                <span class="field-l" id="lblUs">Our style</span>
+                <div class="seg seg-wrap" id="segUs" role="group" aria-labelledby="lblUs"></div>
+              </div>
+              <label class="field">Rounds to deadline<select id="rounds"></select></label>
+              <p class="tiny muted" id="roundsNote"></p>
+            </div>
+
+            <div class="ctl-replay" id="ctlReplay" hidden>
+              <div class="field-g">
+                <span class="field-l" id="lblFile">Recorded file</span>
+                <div class="seg seg-wrap" id="segFile" role="group" aria-labelledby="lblFile"></div>
+              </div>
+              <label class="field file-field">Load your own diplomacy-table v1 NDJSON
+                <input type="file" id="fileInput" accept=".ndjson,.jsonl,.json,.txt,application/x-ndjson,application/json,text/plain">
+              </label>
+              <p class="tiny muted" id="fileNote">Parsed line by line, never evaluated. Bad lines are reported and skipped. Nothing leaves your browser.</p>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="panel mandate" id="mandatePanel">
+          <div class="panel-head"><h4 id="mandateTitle">Mandate</h4><span class="spacer"></span><span class="badge ok" id="mandateBadge">signed</span></div>
+          <div class="panel-body" id="mandateBody"></div>
+        </div>
+      </aside>
+
+      <!-- centre: transcript -->
+      <div class="room-col room-centre">
+        <div class="panel feed-panel">
+          <div class="panel-head feed-head">
+            <h4>Transcript</h4>
+            <span class="marker" id="textSource">template-generated text, no LLM</span>
+            <span class="spacer"></span>
+            <label class="viewas"><span>View as</span><select id="viewAs" aria-describedby="viewNote"></select></label>
+          </div>
+          <div class="feed-tabs" role="tablist" aria-label="Channels" id="tabs"></div>
+          <p class="view-note tiny" id="viewNote"></p>
+          <div class="feed" id="feed" role="log" aria-live="polite" aria-relevant="additions" aria-label="Negotiation transcript" tabindex="0"></div>
+          <div class="feed-foot tiny muted" id="feedFoot"></div>
+        </div>
+      </div>
+
+      <!-- right: analysis -->
+      <aside class="room-col room-right" aria-label="Utility space and analysis">
+        <div class="panel plot-panel">
+          <div class="panel-head"><h4 id="plotTitle">Utility space</h4><span class="spacer"></span><span class="tiny muted" id="plotTag">operator analysis</span></div>
+          <div class="plot-wrap" id="plotWrap"><svg id="plot" viewBox="0 0 400 400" role="img" aria-labelledby="plotTitle plotDesc"><desc id="plotDesc">Our utility on the x axis and the counterpart's on the y axis.</desc></svg></div>
+          <div class="legend tiny" id="legend"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h4>ZOPA readiness</h4><span class="spacer"></span><span class="badge" id="readyBadge">–</span></div>
+          <div class="panel-body"><ul class="ready" id="ready"></ul><div class="settle" id="settle"></div></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h4>Scoreboard</h4><span class="spacer"></span><span class="tiny muted" id="scoreRound"></span></div>
+          <div class="panel-body" id="score"></div>
+        </div>
+      </aside>
+    </div>
+    <div class="sr-only" aria-live="polite" id="announce"></div>
+  </div>
+</section>
+
+<!-- ============ MONTE CARLO ============ -->
+<section class="band" id="mc" aria-labelledby="mc-title">
+  <div class="aura" aria-hidden="true"></div>
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Monte Carlo</span>
+      <h2 id="mc-title" class="fluid-h2">Twenty trials, reported as counts.</h2>
+      <p class="lede">One run is an anecdote. Twenty runs vary the seed (jittering both sides' weights and reservations) and the counterpart's concession style. Outcomes are counts, not percentages: twenty trials can't support a percentage.</p>
+    </div>
+    <div class="mc-controls row wrap-row">
+      <span class="chip on" id="mcScn">–</span>
+      <label class="field inline-field">Vary<select id="mcVary"><option value="seed+style">seed + counterpart style</option><option value="seed">seed only (current styles)</option></select></label>
+      <label class="field inline-field">Base seed<input type="number" id="mcSeed" min="0" max="999999" value="42"></label>
+      <button class="btn primary" type="button" id="btnMC">Run 20 trials</button>
+      <span class="tiny muted" id="mcNote">Escalations are auto-parked in trials (no human in the loop) and counted.</span>
+    </div>
+    <div class="mc-out" id="mcOut" aria-live="polite">
+      <p class="muted small">Run the trials to see how often this mandate settles, escalates or walks.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ EXPORT ============ -->
+<section class="band" id="export" aria-labelledby="ex-title">
+  <div class="wrap">
+    <div class="grid g2 ex-grid">
+      <div class="section-head">
+        <span class="eyebrow">Export</span>
+        <h2 id="ex-title" class="fluid-h2">Take the transcript with you.</h2>
+        <p class="lede">The current run as NDJSON in the diplomacy-table v1 record format (<code>{v, tick, round, ts, kind, actor, channel, payload}</code>). Export as a seat and the same redaction rules apply: excluded channels are dropped, other parties' briefs and scores are withheld, and <b>tick numbers are not renumbered</b>, so the gaps show where the redactions are.</p>
+        <p class="small muted">The header marks the file <code>"synthetic": true</code> with <code>"generator": "neocloud-supply-os/nego-engine"</code>. Replay it in this room with "Load your own…".</p>
+      </div>
+      <div class="panel ex-panel">
+        <div class="panel-head"><h4>NDJSON</h4><span class="spacer"></span><span class="tiny muted" id="exMeta">–</span></div>
+        <div class="panel-body stack">
+          <div class="row wrap-row ex-row">
+            <label class="field inline-field">Export as…<select id="exAs"></select></label>
+            <button class="btn primary" type="button" id="btnExport">Download NDJSON</button>
+          </div>
+          <pre class="ex-preview" id="exPreview" tabindex="0" aria-label="Export preview"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ METHOD & LIMITS ============ -->
+<section class="band" id="method" aria-labelledby="me-title">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Method &amp; limits</span>
+      <h2 id="me-title" class="fluid-h2">What is real, what is modelled, what is illustrative.</h2>
+    </div>
+    <div class="grid g3 method">
+      <article class="card">
+        <span class="badge ok">Real</span>
+        <h3 class="fluid-h3">Rules and records</h3>
+        <p class="small">The guardrails, FR and HITL IDs come from the concept and specification. The record format is the CoLab diplomacy-table v1 contract. The recorded replay is a real CoLab session (three <code>gemma3:12b</code> seats), copied byte for byte. Perspective redaction reproduces the CoLab Aurora export's tick set exactly (there's a test for it).</p>
+      </article>
+      <article class="card">
+        <span class="badge warn">Modelled</span>
+        <h3 class="fluid-h3">Textbook bargaining</h3>
+        <p class="small">Additive multi-issue utility (weights sum to 1). Time-dependent concession tactics (Boulware e=0.2, linear e=1, Conceder e=3; Faratin, Sierra &amp; Jennings, 1998) plus relative tit-for-tat. Offers are log-rolled: the package at the target utility that our frequency opponent model thinks the other side likes most. Acceptance is AC_next with a reservation check. Pareto, Nash and ZOPA are computed over the enumerated outcome space.</p>
+      </article>
+      <article class="card">
+        <span class="badge risk">Illustrative</span>
+        <h3 class="fluid-h3">Not a live agent</h3>
+        <p class="small">No LLM runs in your browser. Synthetic text is template-generated. The tactic detector is rule-based (R1–R12) and says so with a low-confidence <code>positional-statement</code> placeholder when nothing fires; its rule numbers are ours, not upstream's. Counterparties, prices and mandates are fictional, and human approvals are simulated. This is not negotiation advice.</p>
+      </article>
+    </div>
+    <div class="grid g2 method-2">
+      <div class="panel">
+        <div class="panel-head"><h4>Detector rules</h4><span class="spacer"></span><span class="tiny muted">structured offers + text heuristics</span></div>
+        <div class="table-wrap flush"><table class="t" id="rulesTable"><thead><tr><th scope="col">ID</th><th scope="col">Tag</th><th scope="col">Fires when</th></tr></thead><tbody></tbody></table></div>
+      </div>
+      <div class="stack">
+        <div class="notice"><b>Why ZOPA readiness needs five inputs.</b> Both reservation values, both BATNAs priced, and issue weights. Priorities aren't weights and prose red lines aren't priced reservations, so the CoLab replay honestly reports 2 of 5 rather than inventing a ZOPA. If the two sides' acceptable sets don't overlap, no tactic can settle the deal.</div>
+        <div class="notice"><b>Why the mandate escalates instead of stretching.</b> When a deal better for both sides needs more than the cap, our agent counters inside the mandate. At the deadline it parks the package for the named human (HITL-04). In this demo you can approve or deny. In trials the package is parked and counted as escalated.</div>
+        <div class="notice"><b>Seat views are honest.</b> The utility plot and Nash point are operator ground truth built from both private briefs. No seat at the table has them. Switch "View as" to see what each seat sees.</div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer data-shell="footer"></footer>
+</body>
+</html>
