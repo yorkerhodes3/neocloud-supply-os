@@ -1,4 +1,4 @@
-// Every brand preset must derive to a legible page. Run: node --test test/
+// Every brand preset must derive to a legible page. Run: npm test
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';

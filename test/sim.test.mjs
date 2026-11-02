@@ -1,5 +1,5 @@
 // Engine invariants for the agentic supply-chain simulation (docs/assets/js/sim).
-// Run: node --test test/
+// Run: npm test
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Sim, REPORT_DAY } from '../docs/assets/js/sim/engine.js';

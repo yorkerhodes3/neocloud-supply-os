@@ -1,4 +1,4 @@
-// Negotiation Room engine tests — node:test, built-ins only. Run: node --test test/
+// Negotiation Room engine tests — node:test, built-ins only. Run: npm test
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
