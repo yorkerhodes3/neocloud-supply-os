@@ -9,6 +9,7 @@
 // - Every number is modelled or illustrative. See ASSUMPTIONS below.
 import { Rng, hashSeed } from '../lib/rng.js';
 import { SITES, SUPPLIERS, supplier, lane, densify, measure, HQ, GPUS_PER_RACK, RACKS_PER_LOT } from './world.js';
+import { provider as riskProvider, chain as riskChain, call as riskCall } from '../providers.js';
 
 export const MODES = { native: 'Agent-native', legacy: 'Legacy (modelled)' };
 export const PRICE_PER_GPU_HOUR = 2.1;       // illustrative contract rate, $
@@ -59,7 +60,7 @@ export const ADMIN = {
 
 export const ASSUMPTIONS = [
   ['Planning run (BOM explode, need dates)', 'minutes, event-driven', '1–4 days, after a weekly planning cycle', 'modelled'],
-  ['Supplier screen', 'Sayari re-screen in minutes, continuous', 'name check, 0.5–4 days; UBO only at onboarding', 'modelled'],
+  ['Supplier screen', 'Risk-provider re-screen in minutes, continuous', 'name check, 0.5–4 days; UBO only at onboarding', 'modelled'],
   ['RFQ → quote → award', 'A2A minutes; hosted agent hours; Envoy 1–3.5 days', '5–16 days (email, comparison, approval chain)', 'modelled'],
   ['PO → acknowledgement', 'minutes to 2.5 days by supplier tier', '1.5–8 days', 'modelled'],
   ['Customs entry', 'pre-filed, 0.2–1.2 days', '1–6 days; 12% need document fixes (+3–8)', 'modelled'],
@@ -111,9 +112,11 @@ export class Sim {
    * @param {boolean} [o.autoResolve] resolve human decisions with the recommended option after modelled latency
    * @param {'jit'|'asap'} [o.policy] native rack call-off policy
    * @param {'earned'|'dayone'} [o.autonomy] earned = desks act within mandate (L3); dayone = every PO step needs approval
+   * @param {string|object} [o.provider] risk-provider registry id or entry; changes log labels only, never outcomes
    */
-  constructor({ seed = 42, mode = 'native', scenario = null, autoResolve = true, policy = 'jit', autonomy = 'earned', buffer = 10, horizon = 240 } = {}) {
+  constructor({ seed = 42, mode = 'native', scenario = null, autoResolve = true, policy = 'jit', autonomy = 'earned', buffer = 10, horizon = 240, provider = undefined } = {}) {
     Object.assign(this, { seed: seed >>> 0, mode, scenario, autoResolve, policy, autonomy, buffer, horizon });
+    this.P = typeof provider === 'object' && provider ? provider : riskProvider(provider);
     this.A = ADMIN[mode];
     this.t = 0; this.seq = 0; this.q = new Heap();
     this.ledger = []; this.msgs = []; this.alerts = []; this.decisions = []; this.detections = [];
@@ -203,6 +206,9 @@ export class Sim {
   }
 
   // ---------- ledger, messages, alerts ----------
+  /** Risk-provider call text for the active provider: rc('screen_entity', 'X') or rc([[cap, args], …]). */
+  rc(cap, args) { return Array.isArray(cap) ? riskChain(this.P, cap) : riskCall(this.P, cap, args); }
+
   log(desk, text, o = {}) {
     if (this.mode === 'legacy') desk = LEGACY_ROLE[desk] || desk;
     const e = { t: this.t, desk, text, sev: o.sev || 'info', kind: o.kind || 'event', line: o.line?.id, sup: o.sup, site: o.site, human: !!o.human };
@@ -411,7 +417,7 @@ export class Sim {
     switch (stage) {
       case 'plan': if (l.kind === 'rack' && l.lot.i === 0 && l.hall.idx === 0) this.log('Planner', `Contract ${l.site.contract} signed → ${l.site.hallCount * l.site.racksPerHall} racks · ${(l.site.hallCount * l.site.racksPerHall * GPUS_PER_RACK).toLocaleString('en-US')} GPUs at ${l.site.name}; need-by day ${l.site.needBy.join(' / ')}`, { sev: 'ok', site: l.site.id }); break;
       case 'screen':
-        if (nat) this.log('Screener', `sayari: search_entities("${s.name}", ${s.cc}) → get_entity_profile → traverse_network(receives_from, depth 3): ${this.sup[l.supId].sanctioned ? 'MATCH' : 'clear'} (simulated)`, { sup: l.supId, line: l });
+        if (nat) this.log('Screener', `${this.rc([['search_entities', `"${s.name}", ${s.cc}`], ['get_entity', 'id'], ['get_supplier_network', 'depth 3']])}: ${this.sup[l.supId].sanctioned ? 'MATCH' : 'clear'} (simulated)`, { sup: l.supId, line: l });
         else this.log('Compliance', `Name check of ${s.name} against list export (manual)`, { sup: l.supId, line: l });
         break;
       case 'source': this.msg('Sourcing', 'RFQ', l.supId, 'out', l, `${l.M.label} ${short(l)}`); this.after((l.t1 - this.t) * 0.6, () => l.stage === 'source' && this.msg('Sourcing', 'Quote', l.supId, 'in', l)); break;

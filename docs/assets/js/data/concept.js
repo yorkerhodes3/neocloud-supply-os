@@ -96,7 +96,7 @@ export const CONCEPT = {
   },
   {
    "signal": "Tier coverage",
-   "measure": "Active suppliers resolved to a Sayari entity by identifier; critical part families mapped to tier 3",
+   "measure": "Active suppliers resolved to a RISK_PROVIDER entity by identifier; critical part families mapped to tier 3",
    "target": "100% of tier 1; 80% or more of critical families to tier 3",
    "when": "Phase 1 exit; plus 6 months"
   },
@@ -314,7 +314,7 @@ export const CONCEPT = {
     },
     {
      "n": 21,
-     "fn": "Supplier discovery and market scan using Sayari, trade data and cited web search",
+     "fn": "Supplier discovery and market scan using RISK_PROVIDER, trade data and cited web search",
      "desk": "Scout",
      "human": "None",
      "autonomy": "L3",
@@ -322,7 +322,7 @@ export const CONCEPT = {
     },
     {
      "n": 22,
-     "fn": "Supplier onboarding and know-your-supplier: identity, verified banking, certificates, Sayari resolution",
+     "fn": "Supplier onboarding and know-your-supplier: identity, verified banking, certificates, RISK_PROVIDER resolution",
      "desk": "Onboarder",
      "human": "Only when flagged",
      "autonomy": "L3",
@@ -681,7 +681,7 @@ export const CONCEPT = {
   {
    "code": "A9",
    "name": "Third-party risk and resilience",
-   "title": "Third-party risk and resilience: a continuous signal layer backed by Sayari",
+   "title": "Third-party risk and resilience: a continuous signal layer backed by RISK_PROVIDER",
    "functions": [
     {
      "n": 63,
@@ -889,7 +889,7 @@ export const CONCEPT = {
     1,
     20
    ],
-   "tools": "Graph, Sayari, market data, simulator",
+   "tools": "Graph, RISK_PROVIDER, market data, simulator",
    "mandate": "Recommend only",
    "start": "L1"
   },
@@ -898,7 +898,7 @@ export const CONCEPT = {
    "functions": [
     21
    ],
-   "tools": "Sayari search_entities, trade data, cited web search",
+   "tools": "RISK_PROVIDER search_entities, trade data, cited web search",
    "mandate": "Invite suppliers to RFI",
    "start": "L1"
   },
@@ -908,7 +908,7 @@ export const CONCEPT = {
     22,
     63
    ],
-   "tools": "Sayari, official lists, bank-account verification",
+   "tools": "RISK_PROVIDER, official lists, bank-account verification",
    "mandate": "Activate suppliers with no open flags",
    "start": "L0"
   },
@@ -1114,7 +1114,7 @@ export const CONCEPT = {
    "functions": [
     64
    ],
-   "tools": "Sayari traverse_network, get_upstream_supply_chain, trade data",
+   "tools": "RISK_PROVIDER get_supplier_network, trace_upstream, trade data",
    "mandate": "Write tier edges to the graph",
    "start": "L2"
   },
@@ -1126,7 +1126,7 @@ export const CONCEPT = {
     66,
     67
    ],
-   "tools": "Sayari risk factors, official lists, FLSRI",
+   "tools": "RISK_PROVIDER risk factors, official lists, FLSRI",
    "mandate": "Place holds automatically; clearing needs a human",
    "start": "L2"
   },
@@ -1211,87 +1211,126 @@ export const CONCEPT = {
    "start": "L4"
   }
  ],
- "sayariTools": {
+ "riskTools": {
   "head": [
    "Need",
-   "Sayari MCP tool",
+   "Canonical capability",
    "Used by",
-   "Notes from the reference build"
+   "Notes from the reference build and the provider analysis"
   ],
   "rows": [
    [
     "Find candidate records",
-    "search_entities (name plus country); run search_entity_facets first for broad names",
+    "search_entities (name plus country); narrow broad names first where the provider offers facets",
     "Onboarder, Scout",
     "Choose the record whose identifiers match (LEI, national registry number, etc.). Never pick by name alone."
    ],
    [
+    "Resolve by identifier",
+    "resolve_entity",
+    "Onboarder",
+    "Preferred over search whenever an identifier is on file"
+   ],
+   [
     "Read a profile",
-    "get_entity_profile",
+    "get_entity",
     "Onboarder, Mapper",
-    "Includes relationships such as receives_from, useful for tier-2 reads"
+    "Profiles often carry relationships, useful for tier-2 reads"
+   ],
+   [
+    "Ownership and control",
+    "get_ownership",
+    "Onboarder, Screener",
+    "Some providers expose ownership only inside a general graph call"
    ],
    [
     "Tier-1 to tier-n suppliers",
-    "traverse_network(entity_id, relationships=[\"receives_from\"], max_depth, limit)",
+    "get_supplier_network(entity_id, depth, direction)",
     "Mapper",
     "Label the tier on every edge we write to the graph"
    ],
    [
     "Upstream product chains",
-    "get_upstream_supply_chain",
+    "trace_upstream",
     "Mapper",
-    "Timed out without a filter in the reference build, and HS product filters returned nothing through MCP. Use the API directly for filtered calls (Q11)."
+    "Timed out without a filter in the reference build, and HS product filters returned nothing through MCP. Use the API directly for filtered calls (Q11). Not every provider has it (D0)."
+   ],
+   [
+    "Shipment evidence",
+    "search_shipments",
+    "Mapper, Customs",
+    "Corroborates supplier edges"
    ],
    [
     "Risk factor definitions",
-    "lookup_risk_factors",
+    "get_risk_taxonomy",
     "Screener",
     "The catalogue changes. Sync definitions on a schedule and version them."
+   ],
+   [
+    "Disruption events",
+    "list_risk_events",
+    "Watchtower, Resilience",
+    "Hazards also come from GDACS (D4)"
    ]
   ]
  },
  "signals": {
   "head": [
    "Internal signal",
-   "Sayari risk factors (ids or prefixes)",
+   "Signal id",
    "Default policy action (proposed)"
   ],
   "rows": [
    [
     "Sanctions exposure",
-    "sanctioned, sanctioned_adjacent",
+    "sanctions",
     "Hold new commitments and payments automatically; route to the compliance officer"
    ],
    [
     "Export-control proximity",
-    "export_controls_adjacent",
+    "export_control",
     "Hold pending classification and end-use review"
    ],
    [
     "Forced labour",
-    "forced_labor_uflpa_*, forced_labor_sheffield_hallam_*, forced_labor_aspi_*, forced_labor_xinjiang_*, forced_labor_wro_*, exports_ilab_forced_labor, *_forced_labor_reports_entity_adjacent",
+    "forced_labour",
     "Request supplier due-diligence evidence; customs admissibility review for affected goods"
    ],
    [
     "Opaque ownership",
-    "controlled_by_mass_business_registration, mass_address_usage, owned_by_tcsp_keyword_risk",
+    "opaque_ownership",
     "Confirm the ultimate owner before onboarding or payment"
    ],
    [
     "State influence",
-    "soe_adjacent",
+    "state_influence",
     "Context for strategic sourcing and concentration decisions"
    ],
    [
     "Regulatory history",
-    "regulatory_action",
+    "regulatory",
     "Context; Watchtower follow-up"
    ],
    [
     "Child labour",
-    "exports_ilab_child_labor",
+    "child_labour",
     "Due-diligence request"
+   ],
+   [
+    "Operational disruption",
+    "disruption",
+    "Exposure check; the Resilience desk recomputes risk-adjusted lead time"
+   ],
+   [
+    "Financial distress or crime",
+    "financial",
+    "Treasury Aide review of exposure, prepayments and payment terms"
+   ],
+   [
+    "Cyber exposure",
+    "cyber",
+    "Security review of the supplier's access and firmware path"
    ]
   ]
  },
@@ -1308,9 +1347,9 @@ export const CONCEPT = {
     "Re-check the authoritative list at decision time before any hold is cleared or any payment is released (proposed)"
    ],
    [
-    "Tradeverifyd (CoLab partner) or another trade-data source",
-    "Shipment-level evidence: resources, routes, weights, declared values",
-    "Corroborates or contradicts Sayari trade edges (Q12)"
+    "A second provider from the registry, chosen for RISK_PROVIDER's gaps (D0), typically a shipment-level trade-data source",
+    "Shipment-level evidence: resources, routes, weights, declared values; or events, if RISK_PROVIDER lacks them",
+    "Corroborates or contradicts RISK_PROVIDER edges (Q12)"
    ],
    [
     "GDACS hazard feeds (CoLab playbook), plus national sources such as NOAA for US sites",
@@ -1477,7 +1516,7 @@ export const CONCEPT = {
    ],
    [
     "Conflicting evidence",
-    "Sayari and trade data disagree",
+    "RISK_PROVIDER and trade data disagree",
     "Desk owner, with the Auditor"
    ],
    [
@@ -1581,12 +1620,12 @@ export const CONCEPT = {
   {
    "category": "TPRM and GRC (Archer, ProcessUnity, OneTrust)",
    "by": "Onboarder, Screener, Watchtower, Auditor",
-   "external": "Sayari and official lists (data)"
+   "external": "RISK_PROVIDER and official lists (data)"
   },
   {
-   "category": "Supply chain risk monitoring (Everstream, Resilinc, Interos)",
+   "category": "Supply chain risk monitoring dashboards (Everstream, Interos and similar)",
    "by": "Watchtower, Mapper, Resilience",
-   "external": "Sayari, hazard and news feeds"
+   "external": "RISK_PROVIDER data via MCP or API (its signals stay; its separate UI does not), hazard and news feeds"
   },
   {
    "category": "Trade compliance (SAP GTS, Descartes, E2open)",
@@ -1712,14 +1751,14 @@ export const CONCEPT = {
   {
    "n": 8,
    "name": "Sanctions designation in a supplier's ownership chain",
-   "signals": "Sayari re-screen, list delta",
+   "signals": "RISK_PROVIDER re-screen, list delta",
    "auto": "Hold commitments and payments",
    "human": "Clear or exit; legal review"
   },
   {
    "n": 9,
    "name": "Forced-labour detention at port",
-   "signals": "Customs status, Sayari forced-labour flags",
+   "signals": "Customs status, RISK_PROVIDER forced-labour flags",
    "auto": "Hold shipments of affected part families; request evidence",
    "human": "Admissibility response; re-sourcing"
   },
@@ -1776,7 +1815,7 @@ export const CONCEPT = {
  "roadmap": [
   {
    "phase": "0. Foundations (weeks 0–8)",
-   "scope": "Graph schema v0, Ledger, Policy Engine, agent runtime, Reader, Sayari connector with the dtsf twin, evaluation harness, cockpit skeleton",
+   "scope": "Graph schema v0, Ledger, Policy Engine, agent runtime, Reader, RISK_PROVIDER connector (canonical interface) with the dtsf twin, evaluation harness, cockpit skeleton",
    "autonomy": "L0–L1",
    "demo": "A supplier resolved, screened and recorded with an evidence-carrying decision, in the twin"
   },
@@ -1784,7 +1823,7 @@ export const CONCEPT = {
    "phase": "1. Know-your-supplier and the risk backbone (months 2–4)",
    "scope": "Every supplier resolved by identifier; tier mapping for critical families; continuous monitoring; holds",
    "autonomy": "Screener and Mapper at L2–L3",
-   "demo": "The risk-path day in the life (section 4), end to end, with live Sayari"
+   "demo": "The risk-path day in the life (section 4), end to end, with the live RISK_PROVIDER"
   },
   {
    "phase": "2. Source-to-pay for hardware (months 3–8)",

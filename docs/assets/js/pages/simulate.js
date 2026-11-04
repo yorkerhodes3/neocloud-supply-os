@@ -2,6 +2,7 @@
 // drawn in 3D, with a scoreboard, ledger, human decision queue, desk wall and timeline.
 // Everything that defines a run lives in the URL, so a link reproduces it exactly.
 import { mountShell, toast } from '../shell.js';
+import { currentProvider } from '../risk.js';
 import { CONCEPT } from '../data/concept.js';
 import { Sim, ASSUMPTIONS, REPORT_DAY, fmtLag } from '../sim/engine.js';
 import { SCENARIOS, scenarioByN, freshScenario } from '../sim/scenarios.js';
@@ -59,7 +60,7 @@ let seen;                    // per-run cursors for callouts / decision alerts
 let onsetFired = false;
 
 function makeSim(mode, autoResolve) {
-  return new Sim({ seed: cfg.seed, mode, scenario: freshScenario(cfg.scenario), autoResolve, policy: cfg.policy, autonomy: cfg.autonomy });
+  return new Sim({ seed: cfg.seed, mode, scenario: freshScenario(cfg.scenario), autoResolve, policy: cfg.policy, autonomy: cfg.autonomy, provider: currentProvider() });
 }
 function build() {
   sims = { native: makeSim('native', cfg.auto), legacy: makeSim('legacy', true) };
@@ -106,6 +107,8 @@ function restart({ keepChoices = false, keepDay = false } = {}) {
   syncURL();
   scheduleClaims();
 }
+
+window.addEventListener('providerchange', () => { if (sims) restart({ keepChoices: true, keepDay: true }); });
 
 // ---------- callouts ----------
 const calloutsEl = $('#callouts');
@@ -267,7 +270,7 @@ const keep = (e) => ledgerFilter === 'all' || (ledgerFilter === 'msg' && e.kind 
   || (ledgerFilter === 'risk' && (e.sev === 'risk' || e.sev === 'warn' || e.kind === 'risk')) || (ledgerFilter === 'ops' && e.sev === 'ok');
 function renderLedger() {
   const run = sims[cfg.watch];
-  const sig = `${cfg.watch}|${run.ledger.length}|${ledgerFilter}|${choices.length}|${sims.native.seed}`;
+  const sig = `${cfg.watch}|${run.ledger.length}|${ledgerFilter}|${choices.length}|${sims.native.seed}|${run.P.ns}`;
   if (sig === ledgerSig) return;
   const prevLen = +(ledgerSig.split('|')[1] || 0), sameRun = ledgerSig.split('|')[0] === cfg.watch;
   ledgerSig = sig;
@@ -481,7 +484,7 @@ let sweepJob = 0, claimTimer = null;
 function scheduleClaims() { clearTimeout(claimTimer); claimTimer = setTimeout(runSweep, 400); }
 const idle = (fn) => (window.requestIdleCallback ? requestIdleCallback(fn, { timeout: 200 }) : setTimeout(fn, 16));
 function headless(n, mode, over = {}) {
-  const s = new Sim({ seed: cfg.seed, mode, scenario: freshScenario(n), autoResolve: true, policy: cfg.policy, autonomy: cfg.autonomy, ...over });
+  const s = new Sim({ seed: cfg.seed, mode, scenario: freshScenario(n), autoResolve: true, policy: cfg.policy, autonomy: cfg.autonomy, provider: currentProvider(), ...over });
   s.runToEnd();
   return s;
 }

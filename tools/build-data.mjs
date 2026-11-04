@@ -72,7 +72,7 @@ const data = {
   metrics: pick('5. What success looks like').rows.map(r => ({ signal: r[0], measure: r[1], target: r[2], when: r[3] })),
   lanes,
   desks,
-  sayariTools: pick('D2.'), signals: pick('D3.'), sources: pick('D4.'),
+  riskTools: pick('D2.'), signals: pick('D3.'), sources: pick('D4.'),
   tiers: pick('E2.'), messages: pick('E3.'),
   team: pick('H2.').rows.map(r => ({ role: r[0], count: r[1], owns: r[2] })),
   exceptions: pick('H4.'),

@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en" data-ground="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Risk provider kit · Neocloud Supply OS</title>
+<meta name="description" content="One canonical third-party risk interface, any provider. Compare Sayari, Tradeverifyd, Resilinc, Exiger and the generic GenerIQ capability by capability, and dress the demo for whichever provider is in the room.">
+<meta property="og:title" content="Risk provider kit · Neocloud Supply OS">
+<meta property="og:description" content="RISK_PROVIDER is a variable. Eleven canonical capabilities, mapped per provider, with every native name tagged by how we know it.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<script>try{var c=JSON.parse(localStorage.getItem('nso.vars')||'null'),q=new URLSearchParams(location.search).get('brand');if(c&&(!q||q===c.id)){var r=document.documentElement;r.dataset.ground=c.ground;for(var k in c.vars)r.style.setProperty(k,c.vars[k]);}}catch(e){}</script>
+<link rel="stylesheet" href="assets/fonts/fonts.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/site.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+<link rel="stylesheet" href="assets/css/providers.css">
+<script type="module" src="assets/js/pages/providers.js"></script>
+</head>
+<body>
+<a href="#main" class="sr-only">Skip to content</a>
+<header data-shell="nav"></header>
+
+<main id="main">
+<section class="page-hero">
+  <div class="grid-bg" aria-hidden="true"></div>
+  <div class="wrap">
+    <span class="eyebrow">Risk provider kit</span>
+    <h1 class="fluid-h1">One risk interface. <span class="display-em">Any provider.</span></h1>
+    <p class="lede">The design never assumes a third-party risk provider. Every document says <code data-risk-raw>RISK_PROVIDER</code>, and every desk calls one of eleven canonical capabilities. A registry in code maps each capability to the configured provider's own MCP tool or API call, and tags every name with how we know it. Add <code>?risk=</code> to any link to dress a demo for the provider in the room.</p>
+    <div class="row wrap-row" style="gap:10px">
+      <a class="btn primary btn-sweep" href="#providers">Pick a provider</a>
+      <a class="btn" href="#matrix">Compare capabilities</a>
+      <a class="btn ghost" href="#analysis">Read the analysis</a>
+    </div>
+    <div class="rp-now reveal" aria-live="polite">
+      <span class="k">Now dressed for</span>
+      <b data-risk-name></b>
+      <span class="rp-chain" id="nowChain"></span>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="providers">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">01 · Registry</span>
+      <h2 class="fluid-h2">Five providers to start, <span class="display-em">room for more</span>.</h2>
+      <p class="lede">GenerIQ is the generic provider: the canonical interface under a neutral name, for audiences who should not see a vendor. The four vendor entries are built from public interfaces only, checked on <span id="checked"></span>. Coverage bars count the eleven capabilities by support level.</p>
+    </div>
+    <div class="notice" style="margin-bottom:22px"><b>Not affiliated, not an evaluation.</b> Sayari, Tradeverifyd, Resilinc and Exiger are trademarks of their owners and have not reviewed this page. Entries describe what each provider documents publicly; a provider with little public documentation is not a weaker product. Confirm every native name with the provider before relying on it (spec OQ-10).</div>
+    <div class="rp-grid" id="rpGrid"></div>
+    <div class="legend-row" id="supportLegend"></div>
+  </div>
+</section>
+
+<section class="band" id="matrix">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">02 · Capability matrix</span>
+      <h2 class="fluid-h2">Canonical capability → <span class="display-em">native call</span>.</h2>
+      <p class="lede">What each desk would actually call, per provider. A <code>~</code> marks a canonical name standing in where the provider publishes none. A gap names the fallback the registry uses, so the demo never pretends a capability exists.</p>
+    </div>
+    <div class="table-wrap rp-matrix"><table class="t" id="capMatrix"></table></div>
+    <div class="legend-row" id="basisLegend"></div>
+  </div>
+</section>
+
+<section class="band" id="signals">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">03 · Signal mapping</span>
+      <h2 class="fluid-h2">Their categories, <span class="display-em">our signals</span>.</h2>
+      <p class="lede">Each provider's own factor ids or event types map onto ten internal signals (concept D3), and the policy engine acts on the signal, never on the vendor's label. Empty cells are gaps that official lists or a second source must fill.</p>
+    </div>
+    <div class="table-wrap rp-matrix"><table class="t" id="sigMatrix"></table></div>
+  </div>
+</section>
+
+<section class="band" id="analysis">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">04 · Analysis</span>
+      <h2 class="fluid-h2">Do providers share function names? <span class="display-em">Partly.</span></h2>
+      <p class="lede">The hypothesis was that MCP-enabled risk providers expose similarly named functions. The evidence supports it for verbs, not for strings, and only two of the four providers publish names at all.</p>
+    </div>
+    <div class="grid g3" id="findings"></div>
+    <div class="grid g2" style="margin-top:22px">
+      <div class="panel reveal"><div class="panel-head"><h4>The two public interfaces, side by side</h4><span class="spacer"></span><span class="marker">documented</span></div>
+        <div class="panel-body"><div class="table-wrap"><table class="t" id="sideBySide"></table></div></div></div>
+      <div class="panel reveal d1"><div class="panel-head"><h4>What a desk logs, per provider</h4><span class="spacer"></span><span class="marker">screen chain</span></div>
+        <div class="panel-body"><ul class="rp-chains" id="chains"></ul></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="custom">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">05 · Dress and extend</span>
+      <h2 class="fluid-h2">Any name in the slot, <span class="display-em">any provider in the registry</span>.</h2>
+    </div>
+    <div class="grid g2">
+      <form class="panel" id="labelForm" autocomplete="off">
+        <div class="panel-head"><h4>White-label the generic provider</h4></div>
+        <div class="panel-body">
+          <p class="small muted" style="margin-top:0">Shows the canonical interface under any name, for example a prospect's in-house risk platform. Names and tools stay canonical, so nothing is claimed about a real product.</p>
+          <label class="field">Display name<input type="text" id="labelName" maxlength="32" placeholder="Acme Risk Graph"></label>
+          <div class="row wrap-row" style="gap:8px;margin-top:12px">
+            <button class="btn primary" type="submit">Use this name</button>
+            <button class="btn" type="button" id="copyLink">Copy demo link</button>
+            <button class="btn ghost" type="button" id="clearLabel">Clear</button>
+          </div>
+        </div>
+      </form>
+      <div class="panel">
+        <div class="panel-head"><h4>Add a provider</h4><span class="spacer"></span><button class="btn sm" type="button" id="copyEntry">Copy active entry as JSON</button></div>
+        <div class="panel-body">
+          <ol class="rp-steps">
+            <li>Copy the <code>generiq</code> entry in <code>docs/assets/js/providers.js</code> and give it a new key.</li>
+            <li>Fill <code>tools</code> with native names from public docs and tag each <code>basis</code>: <i>documented</i>, <i>reference</i>, <i>announced</i> or <i>none</i>. Mark gaps with a <code>fallback</code>.</li>
+            <li>Map the provider's categories to the ten signals in <code>factors</code>.</li>
+            <li>Add its id to <code>PROVIDER_ORDER</code>. Run <code>npm test</code>: the registry tests check every entry is complete and honest.</li>
+          </ol>
+          <div class="wire" id="entryWire"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer data-shell="footer"></footer>
+</body>
+</html>

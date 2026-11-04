@@ -63,7 +63,7 @@ export const SCENARIOS = [
       wire(sim, this, {
         onset: (s) => { s.flag('HBM', 'warn', 'Tier-3 capacity constraint'); s.flag('FAB', 'warn', 'Packaging queue'); s.alert({ at: P('HBM'), label: 'HBM constraint', sev: 'warn', days: 25 }); },
         native: (s) => {
-          s.log('Mapper', 'sayari: get_upstream_supply_chain(rack system) → HBM supplier at tier 3 flagged; risk-adjusted lead +16 d for builds after day 40', { sev: 'warn' });
+          s.log('Mapper', `${s.rc('trace_upstream', 'rack system')} → HBM supplier at tier 3 flagged; risk-adjusted lead +16 d for builds after day 40`, { sev: 'warn' });
           const waiting = () => s.lines.filter(l => l.kind === 'rack' && l.stage === 'release' && l.state === 'waiting');
           const n = waiting().length;
           s.decide({ title: `Pre-buy: call off ${n} rack lots now (≈$${(n * 27.2).toFixed(0)}M committed early, above mandate)`, desk: 'Planner', why: 'Pulling forward avoids the kit queue but holds capital longer.', rec: 'approve',
@@ -151,7 +151,7 @@ export const SCENARIOS = [
   },
   {
     n: 8, title: 'Sanctions designation in ownership chain', at: 75, focus: P('OPT1'),
-    model: 'A party controlling 52% of Lumen Optics through two holding companies is designated. Native: Sayari re-screening catches the list delta within the hour; payments and new commitments are held and a human chooses clear or exit. Legacy screens at onboarding only; the bank flags a payment weeks later. Every payment or PO in between counts as exposure.',
+    model: 'A party controlling 52% of Lumen Optics through two holding companies is designated. Native: RISK_PROVIDER re-screening catches the list delta within the hour; payments and new commitments are held and a human chooses clear or exit. Legacy screens at onboarding only; the bank flags a payment weeks later. Every payment or PO in between counts as exposure.',
     detect: { native: 0.02, legacy: [20, 25, 35] },
     setup(sim) {
       const open = (s) => s.lines.filter(l => l.supId === 'OPT1' && s.notShipped(l));
@@ -163,7 +163,7 @@ export const SCENARIOS = [
           s.gate({ id: 'SAN', stage: 'order', label: 'sanctions hold on new commitments', desk: 'Screener', match: (l) => l.supId === 'OPT1' });
         },
         native: (s) => {
-          s.log('Screener', 'sayari: list delta → search_entities("Lumen Optics") → traverse_network(owned_by, depth 3): designated party holds 52% via 2 holding cos (simulated)', { sev: 'risk', sup: 'OPT1' });
+          s.log('Screener', `list delta → ${s.rc([['search_entities', '"Lumen Optics"'], ['get_ownership', 'depth 3']])}: designated party holds 52% via 2 holding cos (simulated)`, { sev: 'risk', sup: 'OPT1' });
           s.decide({ title: 'Clear or exit Lumen Optics (designated party controls 52%)', desk: 'Screener', why: 'Legal review required; agents have already held payments and new POs.', rec: 'exit',
             options: [{ id: 'exit', label: 'Exit: move open lots to Coastline', effect: exit }, { id: 'hold', label: 'Hold 10 days for legal opinion', effect: (x) => x.after(10, () => exit(x)) }] });
         },
@@ -173,14 +173,14 @@ export const SCENARIOS = [
   },
   {
     n: 9, title: 'Forced-labour detention at port', at: 45, focus: S('TX1'),
-    model: 'A withhold-release order (hypothetical) on aluminium in a power-shelf sub-component detains rack systems entering the US. Native: Sayari forced-labour risk factors on a tier-3 smelter fire first; Provenance assembles a traceability packet before the lots land. Legacy assembles evidence after detention.',
+    model: 'A withhold-release order (hypothetical) on aluminium in a power-shelf sub-component detains rack systems entering the US. Native: RISK_PROVIDER forced-labour risk factors on a tier-3 smelter fire first; Provenance assembles a traceability packet before the lots land. Legacy assembles evidence after detention.',
     detect: { native: 0.1, legacy: [1, 2, 4] },
     setup(sim) {
       const g = () => sim.gate({ id: 'WRO', stage: 'clear', label: 'detained pending admissibility evidence', match: (l) => l.kind === 'rack' && l.site.id === 'TX1' && l.supId === 'ODM1' });
       wire(sim, this, {
         onset: (s) => { g(); s.alert({ at: S('TX1'), label: 'Detention order', days: 30 }); },
         native: (s) => {
-          s.log('Provenance', 'sayari: get_upstream_supply_chain(power shelf) → lookup_risk_factors → forced-labour flag on tier-3 smelter (simulated)', { sev: 'risk' });
+          s.log('Provenance', `${s.rc([['trace_upstream', 'power shelf'], ['screen_entity', 'tier-3 smelter']])}: forced-labour flag on tier-3 smelter (simulated)`, { sev: 'risk' });
           s.msg('Risk and compliance', 'EvidenceRequest', 'ODM1', 'out', null, 'smelter-level traceability');
           s.decide({ title: 'Sign off the admissibility packet (trade counsel)', desk: 'Provenance', why: 'Filing evidence with customs is a human act.', rec: 'submit',
             options: [{ id: 'submit', label: 'Submit packet', effect: (x) => x.after(x.phys('packet', [2, 3, 5]), () => { x.openGate('WRO'); x.log('Customs', 'Admissibility accepted; lots released', { sev: 'ok' }); }) }] });
@@ -245,7 +245,7 @@ export const SCENARIOS = [
       const open = (s) => racks(s, l => l.supId === 'ODM1' && s.notShipped(l) && l.stage !== 'make');
       wire(sim, this, {
         onset: (s) => { s.flag('ODM1', 'warn', 'Financial distress signals'); s.alert({ at: P('ODM1'), label: 'ODM distress', sev: 'warn', days: 25 }); s.msg('Finance', 'EarlyPaymentOffer', 'ODM1', 'in', null, 'requests 30% prepayment'); },
-        native: (s) => s.decide({ title: 'Support or exit Kestrel Systems', desk: 'Treasury Aide', why: 'Sayari corporate signals + payment-term request. Exposure cap reached.', rec: 'both',
+        native: (s) => s.decide({ title: 'Support or exit Kestrel Systems', desk: 'Treasury Aide', why: 'RISK_PROVIDER corporate signals + payment-term request. Exposure cap reached.', rec: 'both',
           options: [{ id: 'both', label: 'Finance WIP ($4M SCF) + move unstarted lots', effect: (x) => { x.odmSupported = true; x.cost.premium += 0.3; open(x).forEach(l => x.resource(l, 'ODM2', 'cap exposure')); } },
             { id: 'exit', label: 'Exit: move unstarted lots only', effect: (x) => open(x).forEach(l => x.resource(l, 'ODM2', 'exit')) }] }),
       });

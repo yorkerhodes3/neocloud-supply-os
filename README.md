@@ -23,7 +23,7 @@ once GitHub Pages is enabled; see [Deploying](#deploying-the-site)).
 | Appendix A | Capability map: 80 functions aligned to SCOR DS (Orchestrate, Plan, Order, Source, Transform, Fulfill, Return), plus Build and Risk |
 | Appendix B | 36 agent "desks", topology, and desk charters as code |
 | Appendix C | Platform architecture: Supply Graph, Ledger, Policy Engine, write path, latency budget |
-| Appendix D | Risk and resilience backbone using **Sayari MCP** |
+| Appendix D | Risk and resilience backbone, **provider-neutral** (`RISK_PROVIDER`): registry, provider analysis, canonical capabilities over MCP |
 | Appendix E | Agent-first supplier engagement: connectivity tiers, message types, Supplier and Hardware Passports |
 | Appendices F–I | Data model, end-to-end flows, human operating model, governance and controls |
 | Appendices J–M | Legacy collapse map, resilience scenario library, phased roadmap, sources |
@@ -38,10 +38,11 @@ reviewed concept's own tables (`npm run build:data`) instead of paraphrasing the
 
 | Page | What it shows |
 | --- | --- |
-| [`index.html`](docs/index.html) | The solution: 80 SCOR-aligned functions, 36 agent desks, platform, Sayari risk backbone, supplier engagement tiers, controls, roadmap |
+| [`index.html`](docs/index.html) | The solution: 80 SCOR-aligned functions, 36 agent desks, platform, provider-neutral risk backbone, supplier engagement tiers, controls, roadmap |
 | [`simulate.html`](docs/simulate.html) | **Agentic simulation**, after the CoLab 3D evacuation sim. A deck.gl globe and campus view where an agent-native operation and a legacy one run side by side on the same seeded world through 16 disruptions, with a live scoreboard, ledger, decisions and desks. `?scenario=8&seed=42` links reproduce a run |
 | [`negotiate.html`](docs/negotiate.html) | **Negotiation room**, after the CoLab Diplomacy Table and `diplomatic-simulator`. Four deterministic deals (A–D) run agent to agent inside a signed mandate, with a tactic detector (two prohibited tactics), private caucus channels, human escalation, utility space, ZOPA and Monte Carlo. Table E replays a real recorded CoLab session read-only |
 | [`method.html`](docs/method.html) | What is real, modelled, illustrative or fictional; engine assumptions; a live baseline check; limits; lineage |
+| [`providers.html`](docs/providers.html) | **Risk provider kit**: Sayari, Tradeverifyd, Resilinc, Exiger and the generic GenerIQ compared capability by capability, signal mapping, the naming analysis, and a white-label name for any provider |
 | [`brand.html`](docs/brand.html) | **Brand kit**: 12 presets (CoLab, CoLab Daylight, CoreWeave, Nebius, OpenAI, Lambda, Crusoe, Together AI, Nscale, Fluidstack, Vultr, Voltage Park), live WCAG checks, and a custom theme builder with JSON and CSS export |
 
 **Swap brands for a demo:** add `?brand=<id>` to any page URL (for example
@@ -57,14 +58,36 @@ enforces contrast, provenance and self-hosted fonts.
 > confidence rating; Nscale is low confidence. Swap in the official brand guide before
 > showing a theme to that company.
 
-> **All data on the site is simulated.** Suppliers, counterparties and Sayari-style risk
-> signals are fictional. The only real record is the CoLab Diplomacy Table session
+**Swap the risk provider for a demo:** the design names no third-party risk provider. Every
+mention is the variable `RISK_PROVIDER`, and every risk call goes through one of eleven
+canonical capabilities (`search_entities`, `resolve_entity`, `get_entity`, `get_ownership`,
+`get_supplier_network`, `trace_upstream`, `search_shipments`, `screen_entity`,
+`get_risk_taxonomy`, `list_risk_events`, `subscribe_alerts`). The registry in
+[`docs/assets/js/providers.js`](docs/assets/js/providers.js) maps each one to a provider's
+native MCP tool or API call. Pick a provider from the shield switcher in the header, or add
+`?risk=<id>` to any URL: `generiq` (default, generic), `sayari`, `tradeverifyd`, `resilinc`,
+`exiger`. For any other name, use `?risk=custom&riskName=Acme%20Risk`, which shows the
+canonical interface under that name. Switching changes labels and tool names only;
+simulation outcomes are identical. To add a provider, copy the `generiq` entry, fill
+`tools` and `factors` from its public docs, tag each name's `basis`, and add the id to
+`PROVIDER_ORDER`. `test/providers.test.mjs` checks every entry is complete.
+
+> **Do the providers share function names? Partly.** As checked on 2026-11-04, only Sayari
+> (SDK) and Tradeverifyd (OpenAPI) publish callable names. Resilinc has announced MCP and
+> A2A without a public tool list, and Exiger shows no public API. The verbs converge
+> (search, resolve, get entity, graph, shipments, risk flags), but the strings do not:
+> only `get_entity` matches exactly. So the standard is set at the capability level, and
+> every native name records how it is known. See
+> [CONCEPT-IDEA.md, Appendix D0](CONCEPT-IDEA.md#d0-the-risk-provider-is-a-variable).
+
+> **All data on the site is simulated.** Suppliers, counterparties and risk-provider
+> signals are fictional. No provider is called. The only real record is the CoLab Diplomacy Table session
 > replayed in table E, used under its licence (`docs/assets/runs/`).
 
 ### Develop
 
 ```bash
-npm test             # 53 tests: simulation engine, negotiation engine and detector, theme contrast
+npm test             # tests: simulation and negotiation engines, theme contrast, risk-provider registry
 npm run serve        # http://127.0.0.1:8765/
 npm run build:data   # regenerate docs/assets/js/data/concept.js from CONCEPT-IDEA.md
 ```
@@ -88,8 +111,8 @@ plan.
    revocable and audited.
 3. **Suppliers are engaged agent to agent** wherever possible, with email and portal
    fallbacks handled by the same agent.
-4. **Risk is a continuous signal layer**, not a periodic questionnaire. Sayari supplies the
-   entity, ownership and trade graph.
+4. **Risk is a continuous signal layer**, not a periodic questionnaire. A configurable
+   provider (`RISK_PROVIDER`) supplies the entity, ownership and trade graph.
 5. **Humans set intent, hold relationships and make the hard calls.** Autonomy is earned
    desk by desk on evidence.
 
@@ -109,7 +132,7 @@ This repo follows the
 ## Credits
 
 - Startup process and template: Ethical Tech CoLab `project-startup-guide`.
-- Sayari MCP usage patterns: the CoLab *Trace the Unseen* build day, especially the
+- Risk-provider MCP usage patterns (Sayari MCP in the reference build): the CoLab *Trace the Unseen* build day, especially the
   supplier-risk screening playbook in `isislcn/Hazard-and-Suppliers`.
 - Simulation concepts: the CoLab 3D evacuation simulation. Negotiation concepts: the CoLab
   [`diplomatic-simulator`](https://github.com/Ethical-Tech-CoLab/diplomatic-simulator) and

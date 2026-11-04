@@ -2,6 +2,8 @@ import { mountShell, observeReveals, toast } from '../shell.js';
 import { CONCEPT as C } from '../data/concept.js';
 import { md, esc, strip } from '../lib/md.js';
 import { heroGraph } from '../lib/heroGraph.js';
+import { currentProvider } from '../risk.js';
+import { tool, factors, BASIS, SIGNALS } from '../providers.js';
 
 mountShell('index');
 const $ = (s, r = document) => r.querySelector(s);
@@ -40,7 +42,7 @@ const NODES = {
   R: { x: 20, y: 310, w: 180, h: 46, t: 'Reader', s: 'quarantined · no tools', d: 'Turns untrusted documents, emails and agent messages into schema-validated data. Its output is data, never instructions, which is the defence against prompt injection.' },
   P: { x: 270, y: 300, w: 220, h: 50, t: 'Policy & Mandate Engine', s: 'deterministic code', d: 'On the write path, and no agent can bypass it. It checks delegation of authority, mandate scope, cap and expiry, holds, separation of duties and budget, then returns allow, deny or escalate.', cls: 'gate' },
   L: { x: 270, y: 400, w: 220, h: 50, t: 'Ledger + Supply Graph', s: 'append-only · signed', d: 'Every state change is a signed event: who, under which mandate, with what evidence. The graph is a projection of the ledger, so any state can be replayed.' },
-  T: { x: 550, y: 400, w: 180, h: 50, t: 'Sayari + rails', s: 'MCP tool fabric', d: 'Rented senses and rails: Sayari, official lists, trade data, hazards, carriers, banks and the customs broker. In tests they are DTSF twins, so no metered queries are spent.' },
+  T: { x: 550, y: 400, w: 180, h: 50, t: 'Risk provider + rails', s: 'MCP tool fabric', d: 'Rented senses and rails: RISK_PROVIDER (via the canonical risk interface), official lists, trade data, hazards, carriers, banks and the customs broker. In tests they are DTSF twins, so no metered queries are spent.' },
 };
 // [path, label, labelX, labelY, style]
 const EDGES = [
@@ -172,8 +174,27 @@ $('#wire').innerHTML = `<span class="c">// Envoy → Negotiator · after Reader 
 
 // ---------- Risk ----------
 const table = (sel, head, rows, fmt = md) => { $(sel).innerHTML = `<thead><tr>${head.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td>${fmt(c)}</td>`).join('')}</tr>`).join('')}</tbody>`; };
-table('#signals', C.signals.head, C.signals.rows);
-table('#tools', [C.sayariTools.head[0], C.sayariTools.head[1], C.sayariTools.head[2]], C.sayariTools.rows.map(r => r.slice(0, 3)));
+const factorCell = (p, id) => {
+  const f = factors(p, id);
+  return f ? f.slice(0, 4).map(x => `<code>${esc(x)}</code>`).join(' ') + (f.length > 4 ? ` <span class="muted">+${f.length - 4}</span>` : '')
+    : '<span class="gapcell" data-tip="No public category for this signal. The registry routes it to official lists or a second source.">gap → second source</span>';
+};
+const toolCell = (p, cap) => {
+  const t = tool(p, cap);
+  if (t.support === 'gap') return `<span class="gapcell" data-tip="${esc(t.note || '')}">gap → ${esc(t.fallback)}</span>`;
+  const b = BASIS[t.basis];
+  return `<code class="${t.stand ? 'stand-in' : ''}">${esc(t.shown)}</code> <span class="marker" data-tip="${esc(b.tip)}">${esc(b.label)}</span>`;
+};
+function renderRisk() {
+  const p = currentProvider();
+  const sigId = Object.fromEntries(SIGNALS.map(x => [x.label, x.id]));
+  $('#signals').innerHTML = `<thead><tr><th>Internal signal</th><th>${esc(p.name)} factors</th><th>Default policy action</th></tr></thead><tbody>${
+    C.signals.rows.map(r => `<tr><td>${md(r[0])}</td><td>${factorCell(p, sigId[strip(r[0])] || r[1])}</td><td>${md(r[2])}</td></tr>`).join('')}</tbody>`;
+  $('#tools').innerHTML = `<thead><tr><th>Need</th><th>Capability</th><th>${esc(p.name)} native</th></tr></thead><tbody>${
+    C.riskTools.rows.map(r => { const cap = /`([a-z_]+)`/.exec(r[1])?.[1] || strip(r[1]).split(/[ (]/)[0]; return `<tr><td>${md(r[0])}</td><td><code>${esc(cap)}</code></td><td>${toolCell(p, cap)}</td></tr>`; }).join('')}</tbody>`;
+}
+renderRisk();
+window.addEventListener('providerchange', renderRisk);
 
 // ---------- Humans ----------
 $('#ladder').innerHTML = C.ladder.map((l, i) => `
@@ -194,7 +215,7 @@ const DIL = {
     ['07:12', 'Planner', 'Converts it into racks, fabric, megawatts, floor space and dates. Wave 1 fits Hall 3 at Site A. Wave 2 needs Hall 4, whose switchgear is nine weeks late.', 0, 'Plan'],
     ['07:20', 'Allocator → human', 'Drafts the allocation request to the accelerator vendor. A human relationship owner reviews and sends it, because the relationship is strategic.', 0, 'Draft'],
     ['07:25', 'Negotiator · Envoy · Reader', 'RFQs go to three qualified ODMs. Two reply in minutes through their own agents; the third replies by email, which the Reader turns into a structured quote. Two rounds run within the mandate.', 0, 'Source'],
-    ['07:48', 'Screener · Sayari', 'Re-screens all three ODMs and their tier-2 sources. A cable assembler shows a new export_controls_adjacent flag, which is routed to trade compliance as a prompt. That quote is held; the others proceed.', 0, 'Screen'],
+    ['07:48', 'Screener · RISK_PROVIDER', 'Re-screens all three ODMs and their tier-2 sources. A cable assembler shows a new export_controls_adjacent flag, which is routed to trade compliance as a prompt. That quote is held; the others proceed.', 0, 'Screen'],
     ['08:05', 'LLE Expeditor', 'Finds two alternate switchgear units, prices the expedite cost against revenue at risk, and puts one decision in the CSCO\'s cockpit.', 1, 'Escalate'],
     ['08:30', 'CSCO · Trade compliance', 'The CSCO approves the switchgear from its evidence pack. Compliance clears the flag as a name-alike, with the evidence recorded.', 1, 'Decide'],
     ['08:31', 'Buyer · Dispatcher · Customs · Registrar', 'Supplier agents acknowledge the POs and ship notices stream in. Freight is booked, entries are pre-classified, serial records are pre-created and burn-in is scheduled.', 0, 'Execute'],

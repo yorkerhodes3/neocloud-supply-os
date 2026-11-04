@@ -15,17 +15,19 @@
 | Author | yorkerhodes3 |
 | Reviewer(s) | _TBD: one domain reviewer (supply chain and trade compliance), one technical reviewer (agent platforms)_ |
 | Created | 2026-11-02 |
-| Last updated | 2026-11-02 |
+| Last updated | 2026-11-04 (post-review amendment: provider-neutral risk backbone, see sign-off) |
 
 ### How to read this document
 
 - **Sections 1–10** are the concept, in the CoLab template. Read these to decide whether
   the idea deserves a specification.
 - **Appendices A–M** are detailed design material: capability map, agent roster,
-  architecture, the Sayari-backed risk backbone, the supplier agent protocol, data model,
+  architecture, the provider-neutral risk backbone, the supplier agent protocol, data model,
   flows, operating model, controls and roadmap. They exist because the brief asked for
   *every function needed*. They are **inputs** to `SPECIFICATION.md` and `PLAN.md`, not
   approved decisions.
+- **RISK_PROVIDER** is a variable, not a name: the configured third-party risk provider,
+  set in code (Appendix D0). The design assumes no particular provider.
 - This is longer than the template's one-to-two-page guideline, on purpose. The concept
   itself is sections 1–4.
 
@@ -112,9 +114,10 @@ The glue between them is integration middleware, spreadsheets, email, and meetin
 
 - Agents can now use tools reliably through open protocols: **MCP** for agent-to-tool and
   **A2A** for agent-to-agent.
-- Risk-data providers expose agent-ready interfaces. Sayari offers an MCP connector
-  alongside its API, and teams used it to build working supplier screens in a single day at
-  the CoLab's *Trace the Unseen* build day in September 2026 (CoLab).
+- Third-party risk providers increasingly expose agent-ready interfaces: MCP servers
+  alongside REST APIs (Appendix D0 compares four). Teams used one to build working supplier
+  screens in a single day at the CoLab's *Trace the Unseen* build day in September 2026
+  (CoLab; sources in Appendix M).
 - The brief's premise is that **tokens are effectively unlimited, while people and their
   latency are scarce** (user).
 - A neocloud **owns GPUs**, so it can run its own agent fleet on its own capacity.
@@ -123,11 +126,12 @@ The glue between them is integration middleware, spreadsheets, email, and meetin
 
 - (user) Direct experience of a 140-application supply chain portfolio and its
   dependencies.
-- (CoLab) A documented, repeatable Sayari MCP workflow (resolve the entity, traverse its
+- (CoLab) A documented, repeatable risk-provider MCP workflow (resolve the entity, traverse its
   suppliers, map risk flags) from the *Hazard-and-Suppliers* playbook, including its known
   failure modes.
-- (user, related work) Prior digital-twin work on supplier screening against Sayari and
-  Tradeverifyd, and a UFLPA entity regression-testing design, in the `dtsf` repository.
+- (user, related work) Prior digital-twin work on supplier screening against two
+  risk-data providers, and a UFLPA entity regression-testing design, in the `dtsf`
+  repository (Appendix M).
 - **Not yet in hand:** interviews with neocloud supply chain leaders, evidence of supplier
   willingness to connect agents, and measured baseline latencies. These are open questions
   in section 9.
@@ -162,8 +166,10 @@ Instead of 140 applications connected by people, build **one system**:
 
 Suppliers deal with **our agents, not our portals**, and the best-equipped suppliers connect
 **their own agents** directly. Third-party risk is not a separate tool bolted on at the end.
-It is a **continuous signal layer**, fed by Sayari's entity, ownership and trade graph
-through MCP and checked against official lists, that every desk consults before it acts.
+It is a **continuous signal layer**, fed by RISK_PROVIDER (the configured third-party risk
+provider: entity, ownership, supplier-network and event signals) through MCP or API and
+checked against official lists, that every desk consults before it acts. No provider is
+assumed; Appendix D0 defines the variable and the provider-neutral interface.
 
 ### Seven design commitments
 
@@ -185,7 +191,7 @@ through MCP and checked against official lists, that every desk consults before 
 5. **Untrusted content never touches authority.** Supplier documents, emails and agent
    messages are read by a quarantined *Reader* that has no tools. Only schema-validated data
    crosses to agents that can act. This defends against prompt injection by counterparties.
-6. **Evidence-carrying decisions.** Every decision record carries its evidence: Sayari
+6. **Evidence-carrying decisions.** Every decision record carries its evidence: RISK_PROVIDER
    entity IDs, document hashes, retrieval dates, policy version, mandate, model and any
    human approver. **Risk flags are prompts to investigate, never findings** (CoLab).
 7. **Earn autonomy.** Every desk starts read-only and climbs an autonomy ladder (observe,
@@ -194,7 +200,7 @@ through MCP and checked against official lists, that every desk consults before 
 
 **One sourcing rule sits over all seven: own the brain, rent the senses and the rails.**
 Build in-house the data model, agents, policy, workflows, interface and evaluations. Buy the
-data we cannot create (Sayari, official lists, trade data, hazard feeds, commodity indices),
+data we cannot create (RISK_PROVIDER signals, official lists, trade data, hazard feeds, commodity indices),
 use regulated rails (banks, licensed customs brokers, insurers, e-signature), and route
 across foundation models rather than training our own.
 
@@ -215,7 +221,7 @@ Unlimited tokens (user) are spent to buy down **latency** and **uncertainty**:
   lenders.
 
 Two limits remain: tokens are unlimited, but **external data queries and rate limits are
-not** (Sayari and other providers license and meter access), and **physics is not**. Agents
+not** (RISK_PROVIDER and other data sources license and meter access), and **physics is not**. Agents
 cannot make a transformer arrive sooner. They can see a slip earlier, find alternates, and
 re-plan faster.
 
@@ -237,14 +243,14 @@ _Illustrative. Quantities and dates are examples._
    runs two rounds within its mandate: price inside the should-cost band, delivery,
    warranty, and liquidated damages from the template.
 5. Before award, the *Screener* re-screens all three ODMs and their declared tier-2 sources
-   through Sayari (resolve, traverse, risk factors) and the official lists. A tier-2 cable
+   through RISK_PROVIDER (resolve, traverse, risk factors) and the official lists. A tier-2 cable
    assembler shows a new `export_controls_adjacent` flag. That is routed to trade compliance
    as a prompt to investigate. The affected quote is held; the others proceed.
 6. The *LLE Expeditor* escalates the Hall 4 switchgear slip. It finds two alternate units
    with matching specifications, prices expedite cost against revenue at risk, and puts
    **one decision** in the CSCO's cockpit.
 7. **08:30** The CSCO approves the switchgear purchase from its evidence pack. The trade
-   compliance officer clears the tier-2 flag: the Sayari match was a name-alike, and the
+   compliance officer clears the tier-2 flag: the RISK_PROVIDER match was a name-alike, and the
    evidence is recorded.
 8. Purchase orders are issued and acknowledged by supplier agents. Advance ship notices
    stream in. The *Dispatcher* books secure freight, the *Customs* desk pre-classifies, the
@@ -259,7 +265,7 @@ was logged, and is auditable.
 
 ### A day in the life: risk path
 
-1. Overnight, the monitoring sweep (Sayari re-screen, official-list deltas, GDACS hazard
+1. Overnight, the monitoring sweep (RISK_PROVIDER re-screen, official-list deltas, GDACS hazard
    feed, cited web news) finds that the sub-tier maker of a liquid-cooling quick-disconnect
    has been acquired by an entity now on a restricted list. The exposure comes through
    ownership.
@@ -291,7 +297,7 @@ These targets are **proposals for review**. Baselines must be measured first (se
 | **Dock-to-billable time** | Median days from rack received on site to customer acceptance, per serial | 50% below measured baseline | 12 months after Phase 3 |
 | **Supplier decision latency** | Median time from supplier message received to our substantive response | Under 15 minutes in mandate; under 1 business day when a human is required | Phase 2 exit |
 | **Touchless rate** | Share of POs, ship notices, receipts and invoices completed with no human touch | 85% or more | 12 months after Phase 2 |
-| **Tier coverage** | Active suppliers resolved to a Sayari entity by identifier; critical part families mapped to tier 3 | 100% of tier 1; 80% or more of critical families to tier 3 | Phase 1 exit; plus 6 months |
+| **Tier coverage** | Active suppliers resolved to a RISK_PROVIDER entity by identifier; critical part families mapped to tier 3 | 100% of tier 1; 80% or more of critical families to tier 3 | Phase 1 exit; plus 6 months |
 | **Time to protective action** | Risk signal ingested to hold or mitigation applied, or a human decision requested | Under 1 hour | Phase 1 exit |
 | **Agent quality** | Human reversal rate of agent actions; critical-error rate in evaluation and production | Under 2% reversals; zero unmitigated critical errors | Continuous gate |
 | **Portfolio collapse** | Supply chain applications in production | From 140 to 1 platform plus no more than 10 external rails and data feeds | 24 months |
@@ -305,7 +311,7 @@ Not building in v1 (Phases 0–2, Appendix L):
 
 - **Not building: our own foundation model.** We route across commercial and open-weight
   models and run what we can on our own fleet.
-- **Not building: our own risk data.** Sayari, official lists, trade data and hazard feeds
+- **Not building: our own risk data.** RISK_PROVIDER, official lists, trade data and hazard feeds
   are bought, not built.
 - **Not building: the general ledger, payroll or treasury.** We emit accounting events;
   finance's systems book them. Supplier payments go through bank rails. There is no
@@ -334,7 +340,7 @@ Not building in v1 (Phases 0–2, Appendix L):
   collapse over about 24 months. Physical lead times do not shrink because software got
   faster.
 - **Money:** tokens are effectively unlimited (user). The real costs are data licences
-  (Sayari, trade data), inference at scale, a small senior team, security and audit. The
+  (RISK_PROVIDER, trade data), inference at scale, a small senior team, security and audit. The
   budget is not stated; see section 9.
 - **Skills:** agent-platform engineers; graph and data engineering; supply chain domain
   experts to write each desk's charter and evaluations; trade compliance expertise;
@@ -349,8 +355,8 @@ Not building in v1 (Phases 0–2, Appendix L):
   - **Conflict minerals** reporting if publicly listed (verify).
   - **Internal controls.** SOX and ICFR if public or preparing to be. Agents are in scope for
     IT general controls.
-  - **Data licensing.** Sayari fields are licensed. Keep a field-level licence clearance
-    record for every Sayari-derived value shown to anyone, especially suppliers and
+  - **Data licensing.** RISK_PROVIDER fields are licensed. Keep a field-level licence clearance
+    record for every RISK_PROVIDER-derived value shown to anyone, especially suppliers and
     customers (CoLab).
   - **Contract formation.** Agent-made commitments must be authorised by a mandate and
     attributable. Master agreements must recognise electronic agent communications.
@@ -370,7 +376,7 @@ Not building in v1 (Phases 0–2, Appendix L):
 | **Buy an ERP or S2P suite and turn on vendor copilots** | Copilots live inside each app's silo; agents still cross ten or more data models; we inherit vendor roadmaps and licence costs |
 | **Best-of-breed apps, integration platform, and an agent layer on top** | Better, but the agents' view of the world is a patchwork; every integration is a failure point and an attack surface |
 | **Outsource to a 4PL or BPO** | Moves the latency into someone else's queue and gives up control of allocation and compliance, which are our core risks |
-| **Build only the risk layer (Sayari plus screening) and keep the rest** | A good first step, and it is Phase 1, but it leaves the latency problem untouched |
+| **Build only the risk layer (RISK_PROVIDER plus screening) and keep the rest** | A good first step, and it is Phase 1, but it leaves the latency problem untouched |
 | **AI-native, agent-first, one graph (this proposal)** | Chosen for leverage. Its biggest risks are agent reliability, supplier adoption and controls, addressed by the autonomy ladder, the Envoy fallback and deterministic policy gates |
 
 ---
@@ -399,17 +405,18 @@ Each item should be answered in `SPECIFICATION.md` or become a research task in
       interaction at all, and for which message types?
 - [ ] Q8. What contract language makes agent-to-agent commitments binding and attributable?
 
-**Risk data and Sayari**
+**Risk data and the risk provider (RISK_PROVIDER)**
 
-- [ ] Q9. Which Sayari licence tier, and which fields may be stored, shown internally, or
+- [ ] Q9. Which provider becomes RISK_PROVIDER in production, at which licence tier, and which fields may be stored, shown internally, or
       shown to suppliers and customers?
-- [ ] Q10. What is the current Sayari MCP tool list? Are entity-change notifications or
-      watchlists available, or must we schedule our own re-screening?
+- [ ] Q10. What is the chosen provider's current MCP tool list, and does it confirm the
+      mapping in Appendix D0 to the canonical capabilities? Are entity-change notifications
+      or watchlists available, or must we schedule our own re-screening?
 - [ ] Q11. Are the issues seen in the CoLab reference build fixed: HS product filters
-      returning nothing through MCP, and `get_upstream_supply_chain` timing out without a
-      filter?
-- [ ] Q12. Which second trade-data source (for example Tradeverifyd) complements Sayari for
-      shipment-level evidence?
+      returning nothing through MCP, and the upstream-trace tool (`trace_upstream`)
+      timing out without a filter? Does the chosen provider share them?
+- [ ] Q12. Which second source complements RISK_PROVIDER where its coverage map (Appendix
+      D0) shows gaps, for example shipment-level trade evidence or event monitoring?
 
 **Regulatory**
 
@@ -445,7 +452,7 @@ Each item should be answered in `SPECIFICATION.md` or become a research task in
   *(risky: tests Phase 1–2)*
 - 🔴 We assume **a single graph can model hardware, construction and risk** without becoming
   an unmaintainable monolith. *(risky: tests Phase 0)*
-- 🔴 We assume **Sayari's licence permits the storage and reuse we need**, including
+- 🔴 We assume **RISK_PROVIDER's licence permits the storage and reuse we need**, including
   persistent entity IDs on our graph and some supplier-facing displays.
   *(risky: tests before Phase 1)*
 - 🟡 We assume regulators and auditors will accept **agent-prepared, human-signed** decisions
@@ -486,6 +493,13 @@ for errors, but they do not need to be approved here.
 > confirmation. This was a review by the author; the independent domain and technical
 > reviewers named in the metadata table are still TBD. Open questions Q1–Q20 remain open
 > and are carried forward in `SPECIFICATION.md` §12.
+
+**Amendment after review (2026-11-04, requested by the author):** the risk backbone is now
+provider-neutral. Every former mention of a specific provider in the design is the
+variable RISK_PROVIDER, set in the code's provider registry; Appendix D0 adds the
+canonical interface and a comparison of four providers (Sayari, Tradeverifyd, Resilinc,
+Exiger) plus the generic GenerIQ. The sections approved above keep their meaning with
+any provider in the slot. Q9–Q12 were reworded to match. Appendix D needs a fresh review.
 
 ---
 
@@ -545,8 +559,8 @@ The *Autonomy* column is the proposed **steady state**. Every desk starts at L0 
 | # | Function | Desk | Human role | Autonomy | Replaces |
 | --- | --- | --- | --- | --- | --- |
 | 20 | Category strategy: accelerators and systems; CPUs, memory, storage; switching, NICs and DPUs; optics and cables; liquid cooling; rack power; electrical; mechanical; construction services; logistics; field services; energy | Category Strategist | Human lead for the top three categories | L1 | Consultants |
-| 21 | Supplier discovery and market scan using Sayari, trade data and cited web search | Scout | None | L3 | Sourcing intelligence tools |
-| 22 | Supplier onboarding and know-your-supplier: identity, verified banking, certificates, Sayari resolution | Onboarder | Only when flagged | L3 | Supplier portals, TPRM |
+| 21 | Supplier discovery and market scan using RISK_PROVIDER, trade data and cited web search | Scout | None | L3 | Sourcing intelligence tools |
+| 22 | Supplier onboarding and know-your-supplier: identity, verified banking, certificates, RISK_PROVIDER resolution | Onboarder | Only when flagged | L3 | Supplier portals, TPRM |
 | 23 | Supplier qualification, commercial and technical: audit packs, samples, first-article tests | Quality Sentinel | Quality engineer for technical | L2 | QMS |
 | 24 | RFx: author, distribute, answer questions, evaluate | Negotiator | None within mandate | L3 | E-sourcing |
 | 25 | Negotiation: multi-round, within mandate bands, anchored on should-cost | Negotiator | Human for strategic suppliers | L3 (L2 strategic) | — |
@@ -608,7 +622,7 @@ The *Autonomy* column is the proposed **steady state**. Every desk starts at L0 
 | 61 | Redeploying or reselling prior-generation GPUs: pricing, and buyer screening for export controls | Decommissioner, Screener | CFO above threshold | L2 | Brokers |
 | 62 | Recycling, e-waste compliance, take-back programmes | Sustainability | Sustainability lead | L3 | — |
 
-### A9. Third-party risk and resilience: a continuous signal layer backed by Sayari
+### A9. Third-party risk and resilience: a continuous signal layer backed by RISK_PROVIDER
 
 | # | Function | Desk | Human role | Autonomy | Replaces |
 | --- | --- | --- | --- | --- | --- |
@@ -650,7 +664,7 @@ read only by the quarantined **Reader**.
 
 The Conductor never parses raw data itself. It reasons over typed, structured returns from
 desks and tools. This keeps its context clean and its reasoning explainable, a pattern
-also used in public Sayari-based OSINT designs (Appendix M).
+also used in public risk-graph OSINT designs (Appendix M).
 
 ```mermaid
 flowchart TB
@@ -685,9 +699,9 @@ flowchart TB
 | **Planner** | 9, 10, 13, 14, 17 | Graph, simulator, sales pipeline feed | Publish plan versions; no purchasing authority | L1 |
 | **Allocator** | 11 | Graph, vendor allocation feed, Envoy | Draft only; strategic messages go out via a human | L1 |
 | **Materials** | 12, 16, 59 | Graph, BOMs, inventory | Release spares replenishment up to a per-SKU cap | L1 |
-| **Category Strategist** | 1, 20 | Graph, Sayari, market data, simulator | Recommend only | L1 |
-| **Scout** | 21 | Sayari `search_entities`, trade data, cited web search | Invite suppliers to RFI | L1 |
-| **Onboarder** | 22, 63 | Sayari, official lists, bank-account verification | Activate suppliers with no open flags | L0 |
+| **Category Strategist** | 1, 20 | Graph, RISK_PROVIDER, market data, simulator | Recommend only | L1 |
+| **Scout** | 21 | RISK_PROVIDER `search_entities`, trade data, cited web search | Invite suppliers to RFI | L1 |
+| **Onboarder** | 22, 63 | RISK_PROVIDER, official lists, bank-account verification | Activate suppliers with no open flags | L0 |
 | **Negotiator** | 24, 25, 26 | Envoy, should-cost models, commodity indices | Award within ±X% of should-cost up to $Y on approved-vendor parts | L1 |
 | **Contract Steward** | 5, 27 | Clause library, document store, e-signature rail | Execute standard templates below the authority threshold | L1 |
 | **Buyer** | 28, 32, 33 | Graph, Envoy | Issue POs against awarded quotes and frame agreements | L1 |
@@ -707,8 +721,8 @@ flowchart TB
 | **Deployer** | 19, 54, 55 | Graph, site schedules | Schedule installs, open acceptance tests | L1 |
 | **Returns** | 40, 58 | Telemetry, Envoy, warranty terms | Open RMAs and cross-ships within warranty | L1 |
 | **Decommissioner** | 14, 60, 61 | Graph, ITAD partners, resale market data | Schedule decommission; sales go to a human | L0 |
-| **Mapper** | 64 | Sayari `traverse_network`, `get_upstream_supply_chain`, trade data | Write tier edges to the graph | L2 |
-| **Screener** | 18, 65, 66, 67 | Sayari risk factors, official lists, FLSRI | **Place** holds automatically; **clearing** needs a human | L2 |
+| **Mapper** | 64 | RISK_PROVIDER `get_supplier_network`, `trace_upstream`, trade data | Write tier edges to the graph | L2 |
+| **Screener** | 18, 65, 66, 67 | RISK_PROVIDER risk factors, official lists, FLSRI | **Place** holds automatically; **clearing** needs a human | L2 |
 | **Watchtower** | 8, 68, 70 | GDACS, financial data, cited news | Raise signals | L2 |
 | **Resilience** | 1, 71, 72 | Simulator, graph | Recommend; run approved playbooks | L1 |
 | **Sustainability** | 6, 62 | Supplier disclosures, emission factors | Draft disclosures | L1 |
@@ -763,7 +777,7 @@ flowchart TB
   end
   subgraph TOOLS["Tool fabric over MCP"]
     IT["Internal servers: graph, ledger, policy, documents, simulation"]
-    XT["External: Sayari, official lists, trade data, hazards, carriers, banks, broker"]
+    XT["External: RISK_PROVIDER, official lists, trade data, hazards, carriers, banks, broker"]
   end
   subgraph EDGE["Edge"]
     EN["Envoy: A2A, hosted supplier agents, email, EDI"]
@@ -798,14 +812,14 @@ flowchart TB
 | --- | --- | --- |
 | **Supply Graph** | One property graph of every entity and relationship (Appendix F) | The single truth. Views and reports are queries, not copies. |
 | **Event Ledger** | Append-only, signed log of every state change: who (agent or human), under which mandate, with what evidence | The graph is a projection of the ledger, so any state can be replayed and audited. |
-| **Evidence store** | Content-addressed documents, Sayari responses, list snapshots, model inputs and outputs | Every decision references evidence by hash and retrieval date. |
+| **Evidence store** | Content-addressed documents, RISK_PROVIDER responses, list snapshots, model inputs and outputs | Every decision references evidence by hash and retrieval date. |
 | **Policy and Mandate Engine** | Deterministic rules: delegation of authority, mandates, holds, budgets, separation of duties | Policies are code with unit tests. Agents cannot bypass it; it sits on the write path. |
 | **Conductor and desks** | The agent runtime (Appendix B) | Stateless between tasks; memory comes from the graph and the Librarian. |
 | **Tool fabric** | Internal MCP servers per domain, plus external MCP servers and APIs | One protocol for everything an agent can touch. |
 | **Envoy** | The only path in or out for counterparties | Enforces identity, signatures, information barriers and rate limits. |
 | **Reader** | A quarantined model with no tools, turning untrusted content into schema-validated data | Its output is data, never instructions. |
 | **Simulator** | Monte Carlo planning twin of demand, supply, lead times and build schedules | Used before material decisions and for resilience war-games. |
-| **Twin universe** | DTSF behavioural clones of external APIs: Sayari, carriers, supplier agents, banks | Lets every desk be tested offline with fault injection and no per-query cost (Appendix D8). |
+| **Twin universe** | DTSF behavioural clones of external APIs: RISK_PROVIDER, carriers, supplier agents, banks | Lets every desk be tested offline with fault injection and no per-query cost (Appendix D8). |
 | **Model router** | Chooses a model per task by capability, cost, latency and diversity rules | Runs on the neocloud's own fleet where possible, with external fallback. |
 | **AgentOps** | Tracing, evaluation, drift detection, cost and token accounting, replay | Every tool call is traced end to end. |
 | **Cockpit** | The human interface: decision queue, daily brief, "why?" on any record | Replaces most dashboards, inboxes and status meetings. |
@@ -845,82 +859,154 @@ flowchart TB
 
 ---
 
-## Appendix D — Risk and resilience backbone with Sayari MCP
+## Appendix D — Risk and resilience backbone: provider-neutral, over MCP
 
-### D1. Sayari's role
+### D0. The risk provider is a variable
 
-Sayari maps global corporate ownership and supply chain relationships across more than 250
-jurisdictions (CoLab: Sayari partner description). In this design it is the **backend
-signal layer** for third-party risk and resilience. It answers four questions for every
-counterparty and every part family:
+This design does not assume a third-party risk provider. Wherever these documents say
+**RISK_PROVIDER**, read "the configured third-party risk provider". The variable is set in
+code, in the provider registry `docs/assets/js/providers.js`, which also maps every
+canonical capability below to that provider's native MCP tool or API call. The demo site
+switches it with `?risk=<id>` or the shield menu in the navigation bar. The registry starts
+with five entries and is meant to grow:
+
+| Registry id | Provider | What it is strongest at | Public interface (checked 2026-11-04) | Native names known |
+| --- | --- | --- | --- | --- |
+| `generiq` | **GenerIQ** (generic, the demo default) | Neutral label for any provider on the canonical interface; any display name can be set (`?risk=custom&riskName=…`) | Canonical MCP server (illustrative) | 11 of 11, by definition |
+| `sayari` | Sayari | Entity, ownership and trade graph | REST API with beta SDKs; a Graph MCP connector was used in the CoLab reference build but no public Graph MCP was found | 11 of 11 (6 from the reference build, verify) |
+| `tradeverifyd` | Tradeverifyd | Trade traceability, shipments, risk events, verifiable credentials | REST API, OpenAPI v0.2.0; no MCP server found | 9 of 11 (2 gaps) |
+| `resilinc` | Resilinc | Multi-tier supplier, site and part mapping; EventWatch disruptions | MCP and A2A announced (March 2026) and a Copilot plugin (October 2026); no public tool list | 0 of 11 published |
+| `exiger` | Exiger | Due diligence, mapping, trade compliance, software supply chain | No public API, SDK or MCP server found | 0 of 11 published |
+
+**Analysis: do providers share function names?** Partly. The two providers with public,
+machine-readable interfaces converge on the same *verbs* but not the same *strings*:
+Sayari's SDK has `search.search_entity`, `resolution.resolution`, `entity.get_entity`,
+`traversal.traversal` and `ontology.get_risk_factors`; Tradeverifyd's OpenAPI has
+`search_entities`, `resolve_entity`, `get_entity`, `get_entity_graph` and
+`get_flags_types`. Only `get_entity` matches exactly. Resilinc and Exiger publish no names
+to compare. The convergence is real at the level of capability, so we standardise there:
+desks call a **canonical capability**, the registry translates it, and each translation is
+tagged with how we know it (*canonical*, *documented*, *reference build*, *name
+unpublished*, *no public interface*). Where a provider has no equivalent, the registry
+names the fallback (for example "graph walk plus shipments", "second source", "scheduled
+re-screen") and the Resilience desk shows the gap rather than hiding it.
+
+**The canonical interface.** Eleven capabilities, named in the style both public APIs
+already lean towards:
+
+| Canonical capability | Question it answers | Typical arguments |
+| --- | --- | --- |
+| `search_entities` | Who might this be? | name, country |
+| `resolve_entity` | Who is this, really? | LEI, registry number, or name and address |
+| `get_entity` | What do we know about it? | entity id |
+| `get_ownership` | Who owns and controls it? | entity id, depth |
+| `get_supplier_network` | Who supplies whom, tier by tier? | entity id, depth, direction |
+| `trace_upstream` | Where does this part come from? | entity id, product or HS code |
+| `search_shipments` | What actually moved? | entity id, period |
+| `screen_entity` | What risk attaches? | entity id, categories |
+| `get_risk_taxonomy` | What do the flags mean, in this version? | — |
+| `list_risk_events` | What is happening near them? | entity id or region, types, since |
+| `subscribe_alerts` | Tell us when it changes | entity ids, categories |
+
+Rules for the variable:
+
+- Ledger evidence records the provider id and the native call as well as the canonical
+  capability, so a decision stays explainable after a provider change.
+- External keys are stored as `risk_entity_id` plus `risk_provider`. Changing provider is a
+  re-resolution, not a migration.
+- More than one provider may be configured, for example one for ownership and one for
+  events. Each capability then names the provider that serves it; the default is one.
+- Adding a provider is a data change: a registry entry, its fixtures for the `dtsf` twin,
+  and a passing twin suite (D8). No desk code changes.
+
+### D1. RISK_PROVIDER's role
+
+RISK_PROVIDER is the **backend signal layer** for third-party risk and resilience. Whichever
+provider fills the slot, it answers four questions for every counterparty and every part
+family, and the coverage map in D0 shows which ones it answers natively:
 
 1. **Who is this, really?** Entity resolution to a canonical record, by identifier.
 2. **Who owns and controls it?** Ownership and control graph, including beneficial owners.
-3. **Who supplies whom?** Trade-derived supplier relationships, tier by tier.
-4. **What risk is attached?** A catalogue of risk factors on the entity and its network.
+3. **Who supplies whom?** Supplier relationships, tier by tier.
+4. **What risk is attached, and what is happening?** Risk factors on the entity and its
+   network, and disruption events near its sites.
 
-Sayari is **not** the system of record for our decisions. The decision, its evidence and
-its approver live in our Ledger. Sayari IDs and responses are stored as evidence with
+RISK_PROVIDER is **not** the system of record for our decisions. The decision, its evidence
+and its approver live in our Ledger. Provider IDs and responses are stored as evidence with
 retrieval dates, within licence terms.
 
 ### D2. Tool mapping
 
-Tool names come from the CoLab *Trace the Unseen* reference build documented in the
-*Hazard-and-Suppliers* playbook (Appendix M). **Verify them against the current Sayari MCP
-tool list and our licence before building** (Q10).
+Desks call canonical capabilities; the registry supplies the native name for the active
+provider. Native names for Sayari's MCP tools come from the CoLab *Trace the Unseen*
+reference build documented in the *Hazard-and-Suppliers* playbook (Appendix M), and are
+not in Sayari's public documentation. **Verify every native name against the chosen
+provider's current tool list and our licence before building** (Q10).
 
-| Need | Sayari MCP tool | Used by | Notes from the reference build |
+| Need | Canonical capability | Used by | Notes from the reference build and the provider analysis |
 | --- | --- | --- | --- |
-| Find candidate records | `search_entities` (name plus country); run `search_entity_facets` first for broad names | Onboarder, Scout | Choose the record whose **identifiers** match (LEI, national registry number, etc.). Never pick by name alone. |
-| Read a profile | `get_entity_profile` | Onboarder, Mapper | Includes relationships such as `receives_from`, useful for tier-2 reads |
-| Tier-1 to tier-n suppliers | `traverse_network(entity_id, relationships=["receives_from"], max_depth, limit)` | Mapper | Label the tier on every edge we write to the graph |
-| Upstream product chains | `get_upstream_supply_chain` | Mapper | Timed out without a filter in the reference build, and HS product filters returned nothing through MCP. **Use the API directly for filtered calls** (Q11). |
-| Risk factor definitions | `lookup_risk_factors` | Screener | The catalogue changes. Sync definitions on a schedule and version them. |
+| Find candidate records | `search_entities` (name plus country); narrow broad names first where the provider offers facets | Onboarder, Scout | Choose the record whose **identifiers** match (LEI, national registry number, etc.). Never pick by name alone. |
+| Resolve by identifier | `resolve_entity` | Onboarder | Preferred over search whenever an identifier is on file |
+| Read a profile | `get_entity` | Onboarder, Mapper | Profiles often carry relationships, useful for tier-2 reads |
+| Ownership and control | `get_ownership` | Onboarder, Screener | Some providers expose ownership only inside a general graph call |
+| Tier-1 to tier-n suppliers | `get_supplier_network(entity_id, depth, direction)` | Mapper | Label the tier on every edge we write to the graph |
+| Upstream product chains | `trace_upstream` | Mapper | Timed out without a filter in the reference build, and HS product filters returned nothing through MCP. **Use the API directly for filtered calls** (Q11). Not every provider has it (D0). |
+| Shipment evidence | `search_shipments` | Mapper, Customs | Corroborates supplier edges |
+| Risk factor definitions | `get_risk_taxonomy` | Screener | The catalogue changes. Sync definitions on a schedule and version them. |
+| Disruption events | `list_risk_events` | Watchtower, Resilience | Hazards also come from GDACS (D4) |
 
-Practical rules carried over from the playbook:
+Practical rules carried over from the playbook, which apply to any graph provider:
 
 - Large groups fragment across many trade-record name variants. When a parent has few
   trade links, resolve the **importer of record**, the subsidiary named on customs
   filings, and link it to the parent.
-- Sayari sometimes types factories as "person" because of how trade records are parsed.
-  Treat supplier type as unconfirmed unless a source says "manufacturing facility".
+- Trade-derived records sometimes type factories as "person". Treat supplier type as
+  unconfirmed unless a source says "manufacturing facility".
 - Do not geocode addresses into map points. Use the country in the address text, or
-  Sayari coordinates where the licence returns them, and record which basis was used.
+  provider coordinates where the licence returns them, and record which basis was used.
 - Remove non-suppliers from tier edges: freight forwarders and logistics firms, the
   company's own group entities, natural persons, records with no country, and goods
   outside the category being screened.
 
-### D3. Signal taxonomy: from Sayari risk factors to internal signals and default actions
+### D3. Signal taxonomy: from provider risk factors to internal signals and default actions
 
-| Internal signal | Sayari risk factors (ids or prefixes) | Default policy action (proposed) |
+Each provider's own factor ids or categories are mapped to these internal signals in the
+registry (`factors`), and the mapping is versioned. The demo site shows the active
+provider's mapping next to this table; an empty mapping is shown as a gap.
+
+| Internal signal | Signal id | Default policy action (proposed) |
 | --- | --- | --- |
-| **Sanctions exposure** | `sanctioned`, `sanctioned_adjacent` | Hold new commitments and payments automatically; route to the compliance officer |
-| **Export-control proximity** | `export_controls_adjacent` | Hold pending classification and end-use review |
-| **Forced labour** | `forced_labor_uflpa_*`, `forced_labor_sheffield_hallam_*`, `forced_labor_aspi_*`, `forced_labor_xinjiang_*`, `forced_labor_wro_*`, `exports_ilab_forced_labor`, `*_forced_labor_reports_entity_adjacent` | Request supplier due-diligence evidence; customs admissibility review for affected goods |
-| **Opaque ownership** | `controlled_by_mass_business_registration`, `mass_address_usage`, `owned_by_tcsp_keyword_risk` | Confirm the ultimate owner before onboarding or payment |
-| **State influence** | `soe_adjacent` | Context for strategic sourcing and concentration decisions |
-| **Regulatory history** | `regulatory_action` | Context; Watchtower follow-up |
-| **Child labour** | `exports_ilab_child_labor` | Due-diligence request |
+| **Sanctions exposure** | `sanctions` | Hold new commitments and payments automatically; route to the compliance officer |
+| **Export-control proximity** | `export_control` | Hold pending classification and end-use review |
+| **Forced labour** | `forced_labour` | Request supplier due-diligence evidence; customs admissibility review for affected goods |
+| **Opaque ownership** | `opaque_ownership` | Confirm the ultimate owner before onboarding or payment |
+| **State influence** | `state_influence` | Context for strategic sourcing and concentration decisions |
+| **Regulatory history** | `regulatory` | Context; Watchtower follow-up |
+| **Child labour** | `child_labour` | Due-diligence request |
+| **Operational disruption** | `disruption` | Exposure check; the Resilience desk recomputes risk-adjusted lead time |
+| **Financial distress or crime** | `financial` | Treasury Aide review of exposure, prepayments and payment terms |
+| **Cyber exposure** | `cyber` | Security review of the supplier's access and firmware path |
 
-Counting and interpretation rules (CoLab playbook):
+Counting and interpretation rules (CoLab playbook, generalised):
 
 - Count only flags on the **entity's own record**.
-- Flags prefixed `psa_` ("possibly same as") are borrowed from a similar record. Treat them
-  as prompts to investigate, never as counts.
-- The country indices `basel_aml`, `cpi_score` and `eu_high_risk_third` are **country
-  context**, not entity flags.
+- Flags borrowed from a "possibly same as" record (Sayari's `psa_` prefix, for example) are
+  prompts to investigate, never counts.
+- Country indices (such as Basel AML, CPI or the EU high-risk third-country list) are
+  **country context**, not entity flags.
 - **Flags are prompts to investigate, never findings.** A hold is a reversible protective
   action, not a conclusion.
-- Use `lookup_risk_factors` to keep definitions current.
+- Use `get_risk_taxonomy` to keep definitions current. An unknown factor id maps to
+  "investigate", never to "ignore".
 
 ### D4. Complementary sources
 
-Sayari is the backbone, but no single source decides:
+RISK_PROVIDER is the backbone, but no single source decides:
 
 | Source | Adds | Rule |
 | --- | --- | --- |
 | **Official lists**: OFAC (SDN and non-SDN), BIS Entity List and related lists, DHS UFLPA Entity List, EU and UK consolidated lists | The authoritative legal status | **Re-check the authoritative list at decision time** before any hold is cleared or any payment is released (proposed) |
-| **Tradeverifyd** (CoLab partner) or another trade-data source | Shipment-level evidence: resources, routes, weights, declared values | Corroborates or contradicts Sayari trade edges (Q12) |
+| **A second provider from the registry**, chosen for RISK_PROVIDER's gaps (D0), typically a shipment-level trade-data source | Shipment-level evidence: resources, routes, weights, declared values; or events, if RISK_PROVIDER lacks them | Corroborates or contradicts RISK_PROVIDER edges (Q12) |
 | **GDACS** hazard feeds (CoLab playbook), plus national sources such as NOAA for US sites | Floods, cyclones, earthquakes near supplier and our sites | Match by country for context and by polygon for site exposure. Never draw your own buffer around a point event. |
 | **FLSRI**, the CoLab Forced Labor Structural Risk Index | Country-level structural conditions for forced labour, with uncertainty bands | Read in **tiers, not ranks**. A country signal, never an entity finding. |
 | **Cited web search** (for example Tavily) | Recent news, filings, notices | Every claim carries its source URL and date |
@@ -961,12 +1047,12 @@ family the Resilience desk shows the components side by side:
 Each finding carries a confidence tag (high, medium or low) based on data freshness,
 source agreement and graph completeness. We also mark **where the graph goes dark**:
 opaque jurisdictions where ownership cannot be resolved. That pattern comes from public
-Sayari-based OSINT designs (Appendix M), and it matches the CoLab FLSRI approach of
+risk-graph OSINT designs (Appendix M), and it matches the CoLab FLSRI approach of
 showing uncertainty rather than hiding it.
 
 ### D7. Licensing, privacy and publication
 
-- Keep a **field-level licence clearance register**: for every Sayari-derived field, may it
+- Keep a **field-level licence clearance register**: for every RISK_PROVIDER-derived field, may it
   be stored, shown internally, shown to suppliers, shown to customers or lenders?
 - Supplier-facing and customer-facing outputs show only cleared fields. Aggregate views
   outside the company show **counts only**, checked by script before release (CoLab
@@ -977,8 +1063,12 @@ showing uncertainty rather than hiding it.
 ### D8. Testing without spending queries
 
 - The author's `dtsf` framework already includes a **traceability twin pack with
-  Sayari-entity endpoints**. Every desk that calls Sayari is tested first against the twin,
-  with fault injection for timeouts, throttling and partial results, at no per-query cost.
+  risk-provider entity endpoints** (Appendix M). The twin implements the canonical
+  interface (D0), and each registry provider adds fixtures in its native shape. Every desk
+  that calls RISK_PROVIDER is tested first against the twin, with fault injection for
+  timeouts, throttling and partial results, at no per-query cost.
+- The same twin suite runs against **every registry provider**, so switching RISK_PROVIDER
+  shows exactly which desk behaviours change, and where a gap needs its fallback.
 - The `dtsf` **UFLPA regression suite** design (backlog item ER-AUTO-001) becomes a
   continuous evaluation for the Screener: every UFLPA Entity List name and alias is
   re-screened on a schedule and on each list update, with alerts on lost matches or score
@@ -995,7 +1085,9 @@ showing uncertainty rather than hiding it.
 | Factories typed as persons | Treat type as unconfirmed; corroborate from a second source |
 | Coverage gaps in opaque jurisdictions | Mark the gap explicitly; lower confidence; ask the supplier for evidence |
 | MCP filter and timeout issues seen in the reference build | Use the API for filtered and deep traversals; add retries and caching |
-| Catalogue drift in risk factor definitions | Scheduled `lookup_risk_factors` sync with versioning |
+| Catalogue drift in risk factor definitions | Scheduled `get_risk_taxonomy` sync with versioning |
+| Provider gaps and unpublished tool names (D0) | Name the fallback per capability; confirm native names with the provider before Phase 0 (Q10); keep the twin suite provider-agnostic |
+| Lock-in to one provider | Canonical interface, provider id on every external key and evidence record, twin suite per provider |
 | Licence limits on display and reuse | Field-level clearance register (D7) |
 
 ---
@@ -1038,7 +1130,7 @@ human-gated latency budget.
 
 ### E4. Trust between agents
 
-- **Identity:** each supplier agent is bound to a legal entity through its Sayari entity ID,
+- **Identity:** each supplier agent is bound to a legal entity through its RISK_PROVIDER entity ID,
   registry identifiers, verified domain and a signing key. Onboarding establishes the
   binding. Key rotation and revocation are Ledger events.
 - **Authority on both sides:** every message declares the mandate it acts under, for
@@ -1060,7 +1152,7 @@ potentially to other buyers. It replaces questionnaires:
 - conflict-minerals reporting templates;
 - insurance certificates;
 - verified banking details, changeable only through out-of-band verification (Appendix I);
-- our Sayari resolution reference and screening status, within licence (D7).
+- our RISK_PROVIDER resolution reference and screening status, within licence (D7).
 
 This reuses the signed-passport pattern from the CoLab's Digital Passport for Artworks and
 the *arts-provenance-agent* work: claims carry sources, signatures are verifiable by
@@ -1154,7 +1246,7 @@ sequenceDiagram
 | Edge | Meaning | Carries |
 | --- | --- | --- |
 | `OWNS` / `CONTROLS` | Ownership and control between parties | Percentage, source, as-of date |
-| `SUPPLIES` | Trade relationship (inverse of Sayari `receives_from`) | Tier, part family, source, confidence |
+| `SUPPLIES` | Trade relationship (inverse of the provider's supplier edge, e.g. `receives_from`) | Tier, part family, source, confidence |
 | `MANUFACTURES_AT` | A party makes a part at a site | Source |
 | `CONTAINS` | BOM structure, configuration to part | Quantity, alternates |
 | `INSTANTIATES` | A serial is an instance of a part | — |
@@ -1169,8 +1261,9 @@ sequenceDiagram
 
 ### F3. Identity strategy
 
-- **Legal entities:** our own ID, plus the Sayari entity ID as the primary external key,
-  plus registry identifiers (LEI and national numbers).
+- **Legal entities:** our own ID, plus the RISK_PROVIDER entity ID as the primary external
+  key, stored with the provider's id (`risk_provider`) so a change of provider is a
+  re-resolution, not a migration, plus registry identifiers (LEI and national numbers).
 - **Items:** manufacturer part numbers, and GS1 identifiers where suppliers provide them.
 - **Assets:** manufacturer serial numbers, plus our asset ID.
 - **Classifications:** ECCN and HTS codes as versioned references to `Regulation`.
@@ -1243,7 +1336,7 @@ transfers, then recycling for the remainder.
 ### G7. A new supplier in a day
 
 Scout or a requester proposes a supplier, then the Onboarder resolves it by identifier
-through Sayari and checks official lists, then traverses ownership, then requests Supplier
+through RISK_PROVIDER and checks official lists, then traverses ownership, then requests Supplier
 Passport credentials, then verifies banking out of band, then activates with a starter
 mandate (low cap), then the cap rises with performance.
 **Humans:** only if flagged.
@@ -1302,7 +1395,7 @@ number holds is an open question (Q19), tested phase by phase.
 | --- | --- | --- |
 | Out of mandate | Award above the cap | The mandate's issuer or the DoA signatory |
 | Low confidence | Ambiguous entity match | Desk owner |
-| Conflicting evidence | Sayari and trade data disagree | Desk owner, with the Auditor |
+| Conflicting evidence | RISK_PROVIDER and trade data disagree | Desk owner, with the Auditor |
 | Novel situation | No precedent or playbook | Exception desk |
 | Human required by law or policy | Licence determination, PE stamp | Named role |
 | Counterparty request | `EscalateToHuman` | Relationship owner or exception desk |
@@ -1417,8 +1510,8 @@ Vendor names are **illustrative examples of each category**, not an inventory of
 | ERP procurement, MRP and inventory (SAP, Oracle) | Graph, Ledger, Buyer, Payables and Materials desks | General ledger stays with finance in v1 |
 | Source-to-pay and e-sourcing (Coupa, Ariba, Zip) | Negotiator, Buyer, Envoy | — |
 | Contract lifecycle management (Icertis, Ironclad) | Contract Steward, document store | E-signature provider |
-| TPRM and GRC (Archer, ProcessUnity, OneTrust) | Onboarder, Screener, Watchtower, Auditor | Sayari and official lists (data) |
-| Supply chain risk monitoring (Everstream, Resilinc, Interos) | Watchtower, Mapper, Resilience | Sayari, hazard and news feeds |
+| TPRM and GRC (Archer, ProcessUnity, OneTrust) | Onboarder, Screener, Watchtower, Auditor | RISK_PROVIDER and official lists (data) |
+| Supply chain risk monitoring dashboards (Everstream, Interos and similar) | Watchtower, Mapper, Resilience | RISK_PROVIDER data via MCP or API (its signals stay; its separate UI does not), hazard and news feeds |
 | Trade compliance (SAP GTS, Descartes, E2open) | Customs, Screener | Licensed customs broker; official lists |
 | PLM (Windchill, Agile, Arena) | Configurator | — |
 | QMS (MasterControl, ETQ) | Quality Sentinel | — |
@@ -1454,8 +1547,8 @@ starting points (proposed).
 | 5 | Utility interconnection delay | Utility queue status, filings | Re-plan hall energisation; evaluate interim generation | Interim power investment |
 | 6 | Export-control rule change | `RegulationVersionPublished` | Holds on affected items, counterparties and customers | Interpretation; licence applications |
 | 7 | Tariff change on servers or components | Regulation and news | Re-cost open orders; model origin and routing options | Re-sourcing; contract renegotiation |
-| 8 | Sanctions designation in a supplier's ownership chain | Sayari re-screen, list delta | Hold commitments and payments | Clear or exit; legal review |
-| 9 | Forced-labour detention at port | Customs status, Sayari forced-labour flags | Hold shipments of affected part families; request evidence | Admissibility response; re-sourcing |
+| 8 | Sanctions designation in a supplier's ownership chain | RISK_PROVIDER re-screen, list delta | Hold commitments and payments | Clear or exit; legal review |
+| 9 | Forced-labour detention at port | Customs status, RISK_PROVIDER forced-labour flags | Hold shipments of affected part families; request evidence | Admissibility response; re-sourcing |
 | 10 | Regional disruption at a concentration point | Watchtower geopolitical and hazard signals | Activate the regional playbook; protect in-flight shipments | Strategic re-allocation |
 | 11 | Cargo theft or counterfeit | Route anomalies, seal breaks, attestation failures | Quarantine units; alert carrier and insurer | Law enforcement; supplier action |
 | 12 | ODM or integrator financial distress | Financial signals, payment-term requests | Limit exposure; secure work-in-progress and tooling | Support or exit |
@@ -1474,8 +1567,8 @@ a minute.
 
 | Phase | Scope | Autonomy reached | Exit demo |
 | --- | --- | --- | --- |
-| **0. Foundations** (weeks 0–8) | Graph schema v0, Ledger, Policy Engine, agent runtime, Reader, Sayari connector with the `dtsf` twin, evaluation harness, cockpit skeleton | L0–L1 | A supplier resolved, screened and recorded with an evidence-carrying decision, in the twin |
-| **1. Know-your-supplier and the risk backbone** (months 2–4) | Every supplier resolved by identifier; tier mapping for critical families; continuous monitoring; holds | Screener and Mapper at L2–L3 | The risk-path day in the life (section 4), end to end, with live Sayari |
+| **0. Foundations** (weeks 0–8) | Graph schema v0, Ledger, Policy Engine, agent runtime, Reader, RISK_PROVIDER connector (canonical interface) with the `dtsf` twin, evaluation harness, cockpit skeleton | L0–L1 | A supplier resolved, screened and recorded with an evidence-carrying decision, in the twin |
+| **1. Know-your-supplier and the risk backbone** (months 2–4) | Every supplier resolved by identifier; tier mapping for critical families; continuous monitoring; holds | Screener and Mapper at L2–L3 | The risk-path day in the life (section 4), end to end, with the live RISK_PROVIDER |
 | **2. Source-to-pay for hardware** (months 3–8) | RFQ to PO to ASN to receipt to invoice to payment; Envoy Tiers B and C; negotiation within mandates; serial pre-registration | Buyer and Payables at L3 | RFQ to PO in under an hour with three suppliers, one of them by email |
 | **3. Asset lifecycle and dock to billable** (months 6–12) | Registrar, Deployer, Returns, Hardware Passport, collateral reporting | L3 | One rack traced from factory to billing, with its lender report |
 | **4. The build lane** (months 6–15) | Long-lead equipment, project controls, power, commissioning | L2 | A transformer slip detected, re-planned and escalated with options |
@@ -1494,6 +1587,9 @@ greenfield build (user), so the default is no migration.
 
 ## Appendix M — Sources and materials used
 
+Citations below name the providers that the cited material actually used. They record
+provenance, not a design choice; the design itself is provider-neutral (Appendix D0).
+
 **Ethical Tech CoLab**
 
 - [project-startup-guide](https://github.com/Ethical-Tech-CoLab/project-startup-guide):
@@ -1502,7 +1598,7 @@ greenfield build (user), so the default is no migration.
 - CoLab website and the September 2026 newsletter: the *Trace the Unseen* build day, where
   teams built on Sayari's entity and beneficial-ownership graph, Tradeverifyd trade data
   and Tavily. Also Sayari's partner description: coverage of more than 250 jurisdictions
-  (D1).
+  (D0).
 - [forced-labor-structural-risk-index](https://github.com/Ethical-Tech-CoLab/forced-labor-structural-risk-index):
   country-level structural risk, read in tiers with uncertainty bands (D4, D6).
 - [arts-provenance-agent](https://github.com/Ethical-Tech-CoLab/arts-provenance-agent) and

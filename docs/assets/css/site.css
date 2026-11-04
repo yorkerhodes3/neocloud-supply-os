@@ -221,3 +221,8 @@
 .cta-cards h3 { font-size: 1.7rem; }
 .cta-cards p { font-size: 0.78rem; color: var(--muted); margin: 0; }
 .cta-cards .go { font-family: var(--font-mono); font-size: 0.7rem; color: var(--accent); }
+
+/* Risk-provider gaps: a capability or signal the active provider does not offer. */
+.gapcell { color: var(--muted); background: repeating-linear-gradient(135deg, transparent 0 6px, color-mix(in oklab, var(--fg) 4%, transparent) 6px 7px); outline: 1px dashed var(--border); outline-offset: -4px; }
+.gapcell .rp-fb, .gapcell .fb { display: block; font-family: var(--font-mono); font-size: .66rem; color: var(--warn); }
+code.gap { color: var(--muted); text-decoration: line-through dotted; }

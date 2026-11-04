@@ -1,6 +1,8 @@
 // Shared page shell: nav with brand switcher, footer, reveal-on-scroll,
 // card glow, tooltips and toasts. Every page calls mountShell().
 import { initTheme, applyBrand, allBrands, currentBrand } from './theme.js';
+import { initProvider, applyProvider, allProviders, currentProvider } from './risk.js';
+import { coverage } from './providers.js';
 
 const REPO = 'https://github.com/yorkerhodes3/neocloud-supply-os';
 
@@ -11,6 +13,7 @@ const NAV = [
   { href: 'simulate.html', label: 'Simulation', page: 'simulate' },
   { href: 'negotiate.html', label: 'Negotiation', page: 'negotiate' },
   { href: 'method.html', label: 'Method', page: 'method' },
+  { href: 'providers.html', label: 'Providers', page: 'providers' },
   { href: 'brand.html', label: 'Brand kit', page: 'brand' },
 ];
 
@@ -38,6 +41,13 @@ function navHTML(page) {
       <div class="pop-panel" role="menu" aria-label="Brand themes"><div id="brandList"></div>
         <div class="pop-foot">Brand themes are approximate demo dressings built from public visual identity — no logos, no affiliation. <a class="inline" href="brand.html">Open the brand kit →</a></div></div>
     </div>
+    <div class="pop" id="riskPop">
+      <button class="btn sm" id="riskBtn" aria-haspopup="true" aria-expanded="false" title="Swap third-party risk provider">
+        <svg class="rk-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.2 13.6 3.3v4.2c0 3.4-2.3 6.1-5.6 7.3C4.7 13.6 2.4 10.9 2.4 7.5V3.3Z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M5.4 8.1 7.2 9.8l3.4-3.6" fill="none" stroke="var(--accent)" stroke-width="1.6"/></svg>
+        <span class="bb-label"><span class="sr-only">Risk provider: </span><span data-risk-short></span></span> <span aria-hidden="true">▾</span></button>
+      <div class="pop-panel" role="menu" aria-label="Third-party risk providers"><div id="riskList"></div>
+        <div class="pop-foot">The design names no provider: every risk call goes through a canonical interface mapped per provider. Signals are simulated. <a class="inline" href="providers.html">Open the provider kit →</a></div></div>
+    </div>
     <button class="btn icon nav-toggle" aria-label="Menu" id="navToggle">☰</button>
   </div>`;
 }
@@ -47,11 +57,11 @@ function footHTML() {
     <div><div class="brandmark" style="margin-bottom:14px">${MARK}<span class="bm-text"><span class="bm-name"><span data-brand-product></span> Supply OS</span><span class="bm-sub">AI-native · agent-first</span></span></div>
       <p>A concept for running a neocloud's whole supply chain — chips, hardware, data center build, SCOR operations and third-party risk — with agents, mandates and a small human team.</p>
       <p class="tiny">Built with the <a class="inline" href="https://github.com/Ethical-Tech-CoLab/project-startup-guide">Ethical Tech CoLab</a> method: think in documents, review with a human, then build.</p></div>
-    <div><h5>Explore</h5><a href="index.html">Overview</a><a href="simulate.html">Agentic simulation</a><a href="negotiate.html">Negotiation room</a><a href="method.html">Method &amp; limits</a><a href="brand.html">Brand kit</a></div>
+    <div><h5>Explore</h5><a href="index.html">Overview</a><a href="simulate.html">Agentic simulation</a><a href="negotiate.html">Negotiation room</a><a href="method.html">Method &amp; limits</a><a href="providers.html">Risk provider kit</a><a href="brand.html">Brand kit</a></div>
     <div><h5>Documents</h5><a href="${REPO}/blob/main/CONCEPT-IDEA.md">CONCEPT-IDEA.md</a><a href="${REPO}/blob/main/SPECIFICATION.md">SPECIFICATION.md</a><a href="${REPO}">Repository</a></div>
     <div><h5>Lineage</h5><a href="https://github.com/Ethical-Tech-CoLab/3d-agentic-evacuation-simulation">CoLab 3D agentic simulation</a><a href="https://github.com/Ethical-Tech-CoLab/diplomatic-simulator">CoLab diplomatic simulator</a><a href="https://github.com/Ethical-Tech-CoLab/diplomacy-table-live">Diplomacy Table (DTSF)</a><a href="https://github.com/Ethical-Tech-CoLab/website">CoLab design system</a></div>
   </div>
-  <p class="tiny" style="margin-top:34px;opacity:.8">Notional demo. Every supplier, site, quantity and event in the simulations is synthetic; no Sayari data is included — risk signals are simulated using Sayari's documented risk-factor categories. Brand names belong to their owners.</p></div>`;
+  <p class="tiny" style="margin-top:34px;opacity:.8">Notional demo. Every supplier, site, quantity and event in the simulations is synthetic; no <span data-risk-name></span> data is included — risk signals are simulated in the provider's documented categories, or in generic ones where none are public. Brand names belong to their owners.</p></div>`;
 }
 
 function renderBrandList() {
@@ -65,6 +75,20 @@ function renderBrandList() {
       <span><b>${b.name}</b><small>${b.kind === 'lab' ? 'lab theme' : b.kind === 'custom' ? 'your custom theme' : `${b.ground} · ${b.confidence || 'approx.'} confidence`}</small></span>
       <span class="tiny muted">${id === cur ? '●' : ''}</span>
     </button>`).join('');
+}
+
+function renderRiskList() {
+  const list = document.getElementById('riskList');
+  if (!list) return;
+  const cur = currentProvider()?.id;
+  list.innerHTML = Object.entries(allProviders()).map(([id, p]) => {
+    const c = coverage(p);
+    return `<button class="brand-opt risk-opt" role="menuitemradio" aria-checked="${id === cur}" data-risk="${id}">
+      <span class="rk-badge" aria-hidden="true">${p.name.slice(0, 2)}</span>
+      <span><b>${p.name}</b><small>${p.kind === 'generic' ? 'generic · canonical interface' : p.kind === 'custom' ? 'white-label · canonical interface' : `${c.named}/11 tools named · ${p.confidence}`}</small></span>
+      <span class="tiny muted">${id === cur ? '●' : ''}</span>
+    </button>`;
+  }).join('');
 }
 
 export function toast(msg) {
@@ -111,17 +135,33 @@ export function mountShell(page) {
   const foot = document.querySelector('[data-shell="footer"]');
   if (foot) { foot.className = 'foot'; foot.innerHTML = footHTML(); }
   applyBrand(currentBrand().id, { persist: false }); // fill the brand-name slots just rendered
+  initProvider();
 
-  const pop = document.getElementById('brandPop');
-  const btn = document.getElementById('brandBtn');
-  btn?.addEventListener('click', e => {
-    e.stopPropagation();
-    renderBrandList();
-    pop.classList.toggle('open');
-    btn.setAttribute('aria-expanded', pop.classList.contains('open'));
+  const pops = [['brandPop', 'brandBtn', renderBrandList], ['riskPop', 'riskBtn', renderRiskList]];
+  for (const [popId, btnId, render] of pops) {
+    const pop = document.getElementById(popId), btn = document.getElementById(btnId);
+    btn?.addEventListener('click', e => {
+      e.stopPropagation();
+      render();
+      for (const [other] of pops) if (other !== popId) document.getElementById(other)?.classList.remove('open');
+      pop.classList.toggle('open');
+      btn.setAttribute('aria-expanded', pop.classList.contains('open'));
+    });
+  }
+  const closeAll = () => pops.forEach(([id, b]) => { document.getElementById(id)?.classList.remove('open'); document.getElementById(b)?.setAttribute('aria-expanded', 'false'); });
+  document.addEventListener('click', e => { if (!e.target.closest('.pop')) closeAll(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
+  document.getElementById('riskList')?.addEventListener('click', e => {
+    const b = e.target.closest('[data-risk]');
+    if (!b) return;
+    applyProvider(b.dataset.risk);
+    const u = new URL(location.href);
+    if (b.dataset.risk === 'generiq') u.searchParams.delete('risk'); else u.searchParams.set('risk', b.dataset.risk);
+    if (b.dataset.risk !== 'custom') u.searchParams.delete('riskName');
+    history.replaceState(null, '', u);
+    renderRiskList();
+    toast(`Risk signals from ${currentProvider().name}`);
   });
-  document.addEventListener('click', e => { if (pop && !pop.contains(e.target)) pop.classList.remove('open'); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') pop?.classList.remove('open'); });
   document.getElementById('brandList')?.addEventListener('click', e => {
     const b = e.target.closest('[data-brand]');
     if (!b) return;

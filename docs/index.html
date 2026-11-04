@@ -75,14 +75,14 @@
       <li><div><b>Mandates, not roles.</b><p>Authority is a signed, scoped, capped, time-boxed delegation, for example "book freight on approved lanes up to $X per shipment until date Y". Every action cites one.</p></div></li>
       <li><div><b>LLMs propose; policy disposes.</b><p>Agents handle ambiguity. Code enforces limits on money, holds, clearances and commitments.</p></div></li>
       <li><div><b>Untrusted content never touches authority.</b><p>Supplier documents and agent messages are read by a quarantined Reader with no tools. Only schema-valid data crosses over.</p></div></li>
-      <li><div><b>Evidence-carrying decisions.</b><p>Sayari entity IDs, document hashes, retrieval dates, policy version, mandate, model and approver go into every record. Flags are prompts to investigate, never findings.</p></div></li>
+      <li><div><b>Evidence-carrying decisions.</b><p><span data-risk-name></span> entity IDs, document hashes, retrieval dates, policy version, mandate, model and approver go into every record. Flags are prompts to investigate, never findings.</p></div></li>
       <li><div><b>Earn autonomy.</b><p>Every desk starts read-only and climbs the ladder only when measured accuracy earns it. Humans manage by exception.</p></div></li>
       <li class="plus"><div><b>And: all the tokens you want.</b><p>Read everything every time, re-screen the whole graph continuously, simulate before committing, get second opinions by default, shadow every release and red-team constantly. External queries and physics are still metered.</p></div></li>
     </ol>
 
     <div class="rule reveal">
       <div class="own"><span class="k">Sourcing rule</span><h4>Own the brain</h4><p>Data model, agents, policy, workflows, interface and evaluations are built in-house.</p></div>
-      <div><span class="k">Rent the senses</span><h4>Data we can't create</h4><p>Sayari, official lists, trade data, hazard feeds and commodity indices.</p></div>
+      <div><span class="k">Rent the senses</span><h4>Data we can't create</h4><p><span data-risk-name></span> risk signals, official lists, trade data, hazard feeds and commodity indices.</p></div>
       <div><span class="k">Rent the rails</span><h4>Regulated rails</h4><p>Banks, licensed customs brokers, insurers and e-signature.</p></div>
       <div><span class="k">Route the models</span><h4>Many models</h4><p>Route across foundation models on our own fleet, with external fallback. We do not train our own.</p></div>
     </div>
@@ -157,7 +157,7 @@
       <div class="panel reveal d1"><div class="panel-head"><h4>A signed Quote on the wire</h4><span class="spacer"></span><span class="marker">illustrative</span></div><div class="panel-body"><div class="wire" id="wire"></div></div></div>
     </div>
     <div class="grid g2" style="margin-top:18px">
-      <div class="card reveal"><span class="k">Supplier Passport</span><h3>Questionnaires, retired</h3><p class="small muted">A set of verifiable credentials the supplier holds once and presents: certificates with issuer and expiry, audit outcomes, conflict-minerals templates, insurance, verified banking that can only change through out-of-band checks, and our Sayari resolution reference.</p></div>
+      <div class="card reveal"><span class="k">Supplier Passport</span><h3>Questionnaires, retired</h3><p class="small muted">A set of verifiable credentials the supplier holds once and presents: certificates with issuer and expiry, audit outcomes, conflict-minerals templates, insurance, verified banking that can only change through out-of-band checks, and our <span data-risk-name></span> resolution reference.</p></div>
       <div class="card reveal d1"><span class="k">Hardware Passport</span><h3>One signed record per serial</h3><p class="small muted">Origin, ECCN and HTS codes, firmware hashes and attestation, burn-in, chain of custody from factory to rack, liens and warranty, then sanitisation and the next owner. Lenders, customs, customers and resale buyers each see what they are entitled to.</p></div>
     </div>
   </div>
@@ -168,22 +168,23 @@
   <div class="wrap">
     <div class="section-head">
       <span class="eyebrow">06 · Risk and resilience backbone</span>
-      <h2 class="fluid-h2">Third-party risk as a <span class="display-em">continuous signal</span>, backed by Sayari.</h2>
-      <p class="lede">Sayari's entity, ownership and trade graph, reached over MCP, resolves every counterparty by identifier, traces the network down to tier n, and attaches risk factors. Official lists stay the legal authority. Each desk asks one question before it acts: <i>what is my exposure?</i></p>
+      <h2 class="fluid-h2">Third-party risk as a <span class="display-em">continuous signal</span>, from any provider.</h2>
+      <p class="lede">The design names no risk provider. Desks call eleven canonical capabilities; a registry maps them to the configured provider's own MCP tools or API, now <b><span data-risk-name></span></b>. It resolves every counterparty by identifier, traces ownership and supplier tiers, and attaches risk factors and events. Official lists stay the legal authority. Each desk asks one question before it acts: <i>what is my exposure?</i></p>
+      <p class="small muted" style="margin-top:10px">Swap the provider with the shield menu in the navigation bar, or compare all of them in the <a class="inline" href="providers.html">risk provider kit</a>.</p>
     </div>
     <div class="flow reveal">
-      <div><span class="step">1 · Resolve</span><h4>Who is this?</h4><p>Match on identifiers like LEI and registry numbers, never on name alone.</p><p style="margin-top:8px"><code>search_entities</code></p></div>
-      <div><span class="step">2 · Traverse</span><h4>Who is behind them?</h4><p>Ownership and <code>receives_from</code> edges, written to the graph with the tier labelled.</p><p style="margin-top:8px"><code>traverse_network</code></p></div>
-      <div><span class="step">3 · Screen</span><h4>What attaches?</h4><p>Sanctions, export-control proximity, forced labour, state ownership and more.</p><p style="margin-top:8px"><code>risk factors</code></p></div>
+      <div><span class="step">1 · Resolve</span><h4>Who is this?</h4><p>Match on identifiers like LEI and registry numbers, never on name alone.</p><p style="margin-top:8px"><code data-risk-tool="resolve_entity">resolve_entity</code></p></div>
+      <div><span class="step">2 · Traverse</span><h4>Who is behind them?</h4><p>Ownership and <code>receives_from</code> edges, written to the graph with the tier labelled.</p><p style="margin-top:8px"><code data-risk-tool="get_supplier_network">get_supplier_network</code></p></div>
+      <div><span class="step">3 · Screen</span><h4>What attaches?</h4><p>Sanctions, export-control proximity, forced labour, state ownership and more.</p><p style="margin-top:8px"><code data-risk-tool="screen_entity">screen_entity</code></p></div>
       <div><span class="step">4 · Corroborate</span><h4>Is it true?</h4><p>Official lists at decision time, trade data, hazard feeds and cited news.</p><p style="margin-top:8px"><code>OFAC · BIS · UFLPA · GDACS</code></p></div>
       <div><span class="step">5 · Decide</span><h4>What's exposed?</h4><p>Exposure means parts × orders × racks × customers. A hold is placed automatically; clearing it needs a human.</p><p style="margin-top:8px"><code>Screener → cockpit</code></p></div>
     </div>
     <p class="quote-band reveal">Flags are <em>prompts to investigate</em>, never findings.</p>
     <div class="grid g2">
       <div class="reveal"><h3 class="fluid-h3" style="margin-bottom:14px">Signal → default policy action</h3><div class="table-wrap"><table class="t" id="signals"></table></div></div>
-      <div class="reveal d1"><h3 class="fluid-h3" style="margin-bottom:14px">Sayari MCP tool mapping <span class="marker" data-tip="Tool names come from the CoLab reference build and must be checked against the live Sayari MCP server before relying on them.">verify</span></h3><div class="table-wrap"><table class="t" id="tools"></table></div></div>
+      <div class="reveal d1"><h3 class="fluid-h3" style="margin-bottom:14px">Capability → <span data-risk-name></span> tool <span class="marker" data-tip="Each native name is tagged with how we know it. Names from the CoLab reference build or unpublished names must be confirmed with the provider before relying on them (OQ-10).">verify</span></h3><div class="table-wrap"><table class="t" id="tools"></table></div></div>
     </div>
-    <div class="notice" style="margin-top:18px"><b>Licensing and testing.</b> Sayari data is licensed and its queries are metered. Every desk is tested against a DTSF behavioural twin of the Sayari MCP server, so evaluations and simulations make no paid queries. Everything on this site uses simulated signals in Sayari's documented risk-factor categories. No Sayari data appears here.</div>
+    <div class="notice" style="margin-top:18px"><b>Licensing and testing.</b> <span data-risk-name></span> data is licensed and its queries are metered. Every desk is tested against a DTSF behavioural twin of the canonical interface, with fixtures in each provider's native shape, so evaluations and simulations make no paid queries. Everything on this site uses simulated signals, in the provider's documented categories where they are public. No provider data appears here.</div>
   </div>
 </section>
 
@@ -242,7 +243,7 @@
     <div class="collapse reveal">
       <div><div class="app-cloud" id="appCloud" aria-label="140 legacy applications"></div><p class="tiny muted" style="margin-top:10px">Each square is one application in a typical legacy portfolio (illustrative)</p></div>
       <div class="arrow" aria-hidden="true">→</div>
-      <div class="platform"><span class="k"><span data-brand-product>Neocloud</span> Supply OS</span><h3 class="fluid-h3" style="margin:8px 0 10px">Graph · Ledger · Policy · 36 desks · Cockpit</h3><p class="small muted">The rails that stay external: banks, a licensed customs broker, insurers, e-signature, Sayari, official lists, trade data, hazard feeds, commodity indices and carrier APIs.</p><button class="btn sm" id="collapseBtn" style="margin-top:8px">Collapse the portfolio</button></div>
+      <div class="platform"><span class="k"><span data-brand-product>Neocloud</span> Supply OS</span><h3 class="fluid-h3" style="margin:8px 0 10px">Graph · Ledger · Policy · 36 desks · Cockpit</h3><p class="small muted">The rails that stay external: banks, a licensed customs broker, insurers, e-signature, <span data-risk-name></span>, official lists, trade data, hazard feeds, commodity indices and carrier APIs.</p><button class="btn sm" id="collapseBtn" style="margin-top:8px">Collapse the portfolio</button></div>
     </div>
     <div class="table-wrap reveal" style="margin-top:30px"><table class="t legacy-t" id="legacy"></table></div>
   </div>
