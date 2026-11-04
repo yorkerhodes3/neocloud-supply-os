@@ -67,7 +67,6 @@ const desks = pick('B2.').rows.map(r => ({
 
 const data = {
   generatedFrom: 'CONCEPT-IDEA.md',
-  generatedAt: new Date().toISOString().slice(0, 10),
   pains: pick('What the pain costs').rows.map(r => ({ pain: r[0], looks: r[1], costs: r[2] })),
   audiences: pick('3. Who it is for').rows.map(r => ({ who: r[0], cares: r[1], meets: r[2] })),
   metrics: pick('5. What success looks like').rows.map(r => ({ signal: r[0], measure: r[1], target: r[2], when: r[3] })),
