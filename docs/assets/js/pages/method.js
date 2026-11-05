@@ -71,7 +71,7 @@ $('#truthStrip').addEventListener('click', e => {
 // ---------- 01 Pipeline ----------
 const STEPS = [
   { doc: 'CONCEPT-IDEA.md', state: 'done', label: 'Reviewed', text: `Problem, users, the agent-first operating model, ${C.desks.length} agent desks, a provider-neutral risk backbone, roadmap and 20 open questions.` },
-  { doc: 'SPECIFICATION.md', state: 'now', label: 'Drafted · awaiting review', text: 'User stories, functional and non-functional requirements, data model, autonomy ladder, policy engine. 30 open questions carried forward; numbers marked “proposed — confirm” need an owner.' },
+  { doc: 'SPECIFICATION.md', state: 'now', label: 'Drafted · awaiting review', text: 'User stories, functional and non-functional requirements, data model, autonomy ladder, policy engine. 33 open questions carried forward; numbers marked “proposed — confirm” need an owner.' },
   { doc: 'PLAN.md + BACKLOG.md', state: 'next', label: 'Next, after spec sign-off', text: 'Phases, team, budget, the cut list, and the first sprint. The spec suggests Phases 0–2 take about 12 months rather than 90 days.' },
   { doc: 'Human review gate', state: 'next', label: 'Before any build', text: 'The CoLab review checklist: every Must story has a requirement, every requirement is testable, scope fits the budget.' },
   { doc: 'This website', state: 'side', label: 'Built in parallel, at the reviewer’s request', text: 'A demo to make the concept reviewable: a 3D simulation, a negotiation room and swappable brand themes. It is not the product.' },

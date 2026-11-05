@@ -15,7 +15,7 @@
 | Author | yorkerhodes3 |
 | Reviewer(s) | _TBD: one domain reviewer (supply chain and trade compliance), one technical reviewer (agent platforms)_ |
 | Created | 2026-11-02 |
-| Last updated | 2026-11-04 (post-review amendment: provider-neutral risk backbone, see sign-off) |
+| Last updated | 2026-11-05 (Appendix M: vendor research added). 2026-11-04: post-review amendment, provider-neutral risk backbone, see sign-off |
 
 ### How to read this document
 
@@ -1633,6 +1633,17 @@ provenance, not a design choice; the design itself is provider-neutral (Appendix
 - Model Context Protocol: <https://modelcontextprotocol.io>
 - Agent2Agent (A2A) protocol for agent-to-agent interoperability.
 - NIST SP 800-88, Guidelines for Media Sanitization.
+
+**Market and vendor research** (notes in [`research/`](./research/))
+
+- [Supermicro Data Center Building Block Solutions (DCBBS)](https://www.supermicro.com/en/solutions/dcbbs):
+  one vendor selling compute systems, in-rack and in-row liquid cooling, site
+  infrastructure, management software and on-site services as one offering, with rack (L11)
+  and cluster (L12) validation before shipping and blueprints sized from a power envelope.
+  Vendor-published and not independently verified. Summarised with its sources in
+  [research/supermicro-dcbbs.md](./research/supermicro-dcbbs.md). It informs
+  `SPECIFICATION.md` §5.17 (integrated building blocks) and touches functions 1, 10, 34–36,
+  43 and 71 and scenarios K12–K13 here.
 
 **Not yet verified**
 

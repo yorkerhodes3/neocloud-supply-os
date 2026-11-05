@@ -16,8 +16,8 @@
 | Concept doc | [CONCEPT-IDEA.md](./CONCEPT-IDEA.md) (status `Reviewed`, 2026-11-02) |
 | Author | yorkerhodes3, with GitHub Copilot as drafting partner |
 | Reviewer(s) | _TBD: one domain reviewer (supply chain and trade compliance), one technical reviewer (agent platforms)_ |
-| Version | 0.1.0 |
-| Last updated | 2026-11-02 |
+| Version | 0.2.0 |
+| Last updated | 2026-11-05 (added §5.17 integrated infrastructure building blocks, from [research/supermicro-dcbbs.md](./research/supermicro-dcbbs.md)) |
 
 ### How to read this specification
 
@@ -31,7 +31,7 @@
 | 2 | Source-to-pay for hardware | RFQ to PO in under an hour with three suppliers, one of them by email |
 
 **Phases 3–6 are later scope.** They appear only as one-line requirement stubs
-(§4.5 and §5.17) so that v1 does not paint them into a corner. Each needs its own
+(§4.5 and §5.18) so that v1 does not paint them into a corner. Each needs its own
 specification pass before its phase starts.
 
 **Markers** (same as the concept, plus one):
@@ -50,7 +50,7 @@ specification pass before its phase starts.
 | Prefix | Meaning | Example |
 | --- | --- | --- |
 | `US-nnn` | User story | US-010 |
-| `FR-<AREA>-nnn` | Functional requirement. Areas: FND foundations, DSK desks and runtime, POL policy and mandates, RDR Reader, ENV Envoy, CKP cockpit, RSP risk-signal provider (RISK_PROVIDER) and list connectors, KYS know-your-supplier, RSK screening and holds, MAP mapping and exposure, LIC licensing and privacy, S2P source-to-pay, CTL controls, AUD audit and replay, AUT autonomy ladder, EVL evaluation, MET metrics. Later: AST, BLD, IBP, CIR | FR-KYS-002 |
+| `FR-<AREA>-nnn` | Functional requirement. Areas: FND foundations, DSK desks and runtime, POL policy and mandates, RDR Reader, ENV Envoy, CKP cockpit, RSP risk-signal provider (RISK_PROVIDER) and list connectors, KYS know-your-supplier, RSK screening and holds, MAP mapping and exposure, LIC licensing and privacy, S2P source-to-pay, CTL controls, AUD audit and replay, AUT autonomy ladder, EVL evaluation, MET metrics, IBB integrated infrastructure building blocks (§5.17). Later: AST, BLD, IBP, CIR | FR-KYS-002 |
 | `NFR-<CAT>-nnn` | Non-functional requirement | NFR-SEC-003 |
 | `BR-nnn` | Business rule (§8) | BR-012 |
 | `HITL-nn` | Human-in-the-loop decision point (§8.3) | HITL-04 |
@@ -63,7 +63,8 @@ RISK_PROVIDER hold for any registry entry, including the generic GenerIQ.
 **Trace notation.** `F22` = concept Appendix A function #22. Desk names are from
 Appendix B. `G7` = Appendix G flow 7. `RP` and `HP` = the risk-path and happy-path
 "day in the life" in concept §4. `C2`, `D3`, `E8`, `I5` and so on = concept appendix
-sections.
+sections. `DCBBS-3` = finding 3 in the research note
+[`research/supermicro-dcbbs.md`](./research/supermicro-dcbbs.md).
 
 **Priorities** use MoSCoW: `Must`, `Should`, `Could`, and `Later` (a later phase; not v1).
 
@@ -159,6 +160,7 @@ order (proposed — confirm):
 5. Scout supplier discovery (US-022): move to Phase 3.
 6. Contract Steward e-signature execution: humans sign every contract in v1.
 7. Statistical fraud detection: keep only the deterministic rules (duplicates, split purchases, bank changes).
+8. Integrated building-block features (§5.17, all Should or Could): cut FR-IBB-006 to FR-IBB-008 first, then FR-IBB-001 to FR-IBB-003. Keep FR-IBB-004, which closes a gap in the tier-2 screen, and keep FR-IBB-005 if integrated offers are bought (OQ-31).
 
 Nothing in goals 1–3 or in the controls (§8.5, §8.6) should be cut.
 
@@ -247,6 +249,12 @@ requirements (§5) that point back to it.
 | US-037 | As **legal**, I want standard templates executed below the authority threshold and any non-standard term routed to me, so that I only review real deviations. | Should | F5, F27, Contract Steward | Given a supplier redline to the liability clause, when the contract is prepared, then it routes to legal and is not executed. |
 | US-038 | As a **supplier user**, I want to see my own scorecard and open issues, so that I know where I stand. | Could | E7, F31 | Given I open my hosted-agent console, when I view my scorecard, then I see only my own metrics. |
 | US-039 | As the **CSCO**, I want the concept's success metrics computed from the Ledger, so that we judge the system on evidence. | Must | §5 | Given a month of events, when I open metrics, then each §2 metric shows its value, definition and the events it was computed from. |
+| US-049 | As the **CSCO**, I want integrated offers from integrators quoted per layer and compared like for like with single-layer offers, so that we choose a bundle or best-of-breed on evidence. | Should | F1, F24, F26, DCBBS-1 | Given one bundled quote across four layers and two single-layer quotes, when I open the sourcing event, then each layer shows every offer or "not quoted", and layer prices were requested for the bundle if it lacked them. |
+| US-050 | As the **trade compliance officer**, I want the makers an integrator chooses inside a rack to be declared and screened, so that a bundle cannot hide a risky or unapproved tier-2 source. | Should | F34, F65, HP step 5, DCBBS-2 | Given a rack quote declaring a held optics maker, when the award is evaluated, then that quote is excluded with the hold ID. |
+| US-051 | As the **CSCO**, I want to see when one supplier group would supply most layers of a site, so that I accept that concentration knowingly. | Should | F71, K12, K13, DCBBS-1 | Given an award that would make group G the source of three layers at site S, when proposed, then it reaches me with the layer list and the alternatives quoted. |
+| US-052 | As a **site lead** (receiving), I want rack and cluster validation reports linked to the PO line and serials before units arrive, so that untested racks are caught at the dock. | Could | F36, G4, DCBBS-4 | Given a PO line requiring L12, when the ASN arrives without an L12 report, then a receipt exception exists before any unit is scanned. |
+| US-053 | As the **Negotiator's desk owner**, I want supplier figures recorded as claims with their source and status, so that marketing numbers never enter an award as facts. | Could | F31, D6, DCBBS-6 | Given a time-to-online figure that appears only in a brochure, when quotes are evaluated, then it is shown as "supplier claim" and is not used in the evaluation. |
+| US-054 | As the **controller**, I want service lines in a hardware PO accepted by milestone, so that installation and support invoices can be matched without serials. | Could | F29, F33, DCBBS-8 | Given a racking-service line, when the named acceptor accepts the milestone, then the invoice for that line can match. |
 
 ### 4.4 Cross-cutting — autonomy and governance
 
@@ -266,6 +274,10 @@ requirements (§5) that point back to it.
 | US-046 | As the **trade compliance officer**, I want customers screened for end use and end user. | Later (Phase 5) | F18, OQ-14 |
 | US-047 | As a **Tier A supplier**, I want my own agent to talk to yours over A2A with mutual authentication. | Later (Phase 5) | E2, E4 |
 | US-048 | As the **CFO**, I want prior-generation GPUs decommissioned, sanitised and resold to screened buyers. | Later (Phase 6) | G6, F60, F61 |
+| US-055 | As a **site lead**, I want the integrator's as-built handover pack checked for completeness before customer handover. | Later (Phase 3) | F19, F55, E6, DCBBS-4, DCBBS-8 |
+| US-056 | As the **Returns desk owner**, I want firmware, health and leak events read from site infrastructure-management systems, so that RMAs and quality holds start from telemetry. | Later (Phase 3) | F37, F58, K13, DCBBS-7 |
+| US-057 | As the **Planner's owner**, I want a power envelope turned into scalable units and layer quantities and compared with an integrator's blueprint. | Later (Phase 4) | F10, F12, DCBBS-3 |
+| US-058 | As the **LLE Expeditor's owner**, I want cooling and power equipment bought from IT integrators handled as long-lead equipment with slot reservations and witness tests. | Later (Phase 4) | F43, DCBBS-1, DCBBS-5 |
 
 ## 5. Functional requirements
 
@@ -471,7 +483,57 @@ Numbered, testable statements. Each one should be answerable with yes or no afte
 | --- | --- | --- | --- | --- | --- |
 | FR-MET-001 | The system shall compute every in-scope §2 metric from Ledger events, show its definition, and drill down to the events behind it. Baselines are entered when OQ-01 is answered. | US-039 | 1–2 | §5 | Given a metric, when I drill down, then I reach the events it counts. |
 
-### 5.17 Later scope (Phases 3–6) — requirement stubs
+### 5.17 Integrated infrastructure building blocks (IBB)
+
+Research-informed. Some integrators now sell every layer of an AI data center as one
+offer: compute systems, in-rack and in-row liquid cooling, site infrastructure,
+management software and on-site services, validated at rack and cluster level before
+shipping. The research note [`research/supermicro-dcbbs.md`](./research/supermicro-dcbbs.md)
+records one example (trace `DCBBS-n`). The buying system must take such offers without
+losing sight of prices, tier-2 sources or concentration.
+
+Requirements name no vendor. An **integrator** is any supplier that offers more than one
+building-block layer (BR-040) as one offer. Every v1 feature here is `Should` or `Could`,
+so this section adds no `Must` scope (cut list item 8, §2). Later-phase features are stubs
+in §5.18.
+
+**Feature list**
+
+| # | Feature | What it does | Research | Requirement | Ph | Priority |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Building-block configurations | Configurations at system, rack, scalable-unit, row and site level, with BOM roll-up | DCBBS-1, 2, 3 | FR-IBB-001 | 2 | Should |
+| 2 | Layer-decomposed quotes | A bundled quote broken down per layer, with scope inclusions and exclusions | DCBBS-1, 8 | FR-IBB-002 | 2 | Should |
+| 3 | Bundle versus best-of-breed comparison | One grid comparing a bundle with single-layer offers; gaps shown, never priced at zero | DCBBS-1, 3 | FR-IBB-003 | 2 | Should |
+| 4 | Declared sub-component makers | Makers the integrator chose inside a rack are declared, screened and checked against our approved manufacturers | DCBBS-2 | FR-IBB-004 | 2 | Should |
+| 5 | Cross-layer concentration | Shows, and escalates, when one supplier group would supply many layers of one site | DCBBS-1, 5, 8 | FR-IBB-005 | 2 | Should |
+| 6 | Factory validation evidence | Required L10–L12 validation reports linked to PO lines, ASNs and serials | DCBBS-4 | FR-IBB-006 | 2 | Could |
+| 7 | Supplier claims register | Supplier figures stored as claims with source and date; used in decisions only once contracted or verified | DCBBS-5, 6, 9 | FR-IBB-007 | 2 | Could |
+| 8 | Service milestone acceptance | Service lines in a hardware PO accepted by milestone, so their invoices can match | DCBBS-8 | FR-IBB-008 | 2 | Could |
+| 9 | As-built handover pack | Completeness check of port map, cabling plan, firmware baseline, validation reports and warranty before customer handover | DCBBS-4, 8 | FR-AST-006 | 3 | Later |
+| 10 | Validation results on the Hardware Passport | The Integrator desk accepts L10–L12 results against the test plan and writes them per serial | DCBBS-4 | FR-AST-007 | 3 | Later |
+| 11 | Infrastructure-management connector | Read-only inventory, firmware, power and leak signals over an open standard (Redfish first) | DCBBS-7 | FR-AST-008 | 3 | Later |
+| 12 | Liquid-cooling traceability | Serialised CDUs and manifolds, cold-plate and coolant lots, holds on leak or quality signals | DCBBS-5 | FR-AST-009 | 3 | Later |
+| 13 | Integrator service levels | On-site response and parts-replacement times measured into scorecards | DCBBS-8 | FR-AST-010 | 3 | Later |
+| 14 | Time-to-online tracking | Promised against actual dates, from PO through factory validation to online | DCBBS-9 | FR-AST-011 | 3 | Later |
+| 15 | Power-envelope sizing | Megawatts and platform into scalable units and layer quantities; variance against an integrator's blueprint | DCBBS-3 | FR-BLD-003 | 4 | Later |
+| 16 | Integrator-supplied facility equipment | In-row and sidecar CDUs, rear-door heat exchangers, cooling towers, power shelves and battery backup units handled as long-lead equipment | DCBBS-1, 5 | FR-BLD-004 | 4 | Later |
+| 17 | Integrator turnkey build services | Design, permitting and general contracting from an integrator controlled as a construction contract | DCBBS-8 | FR-BLD-005 | 4 | Later |
+| 18 | Reference-architecture change impact | When a platform blueprint changes, find the configurations, orders and plans built on it | DCBBS-10 | FR-IBP-004 | 5 | Later |
+
+**v1 requirements**
+
+| ID | Requirement | Story | Ph | Trace | Acceptance criteria |
+| --- | --- | --- | --- | --- | --- |
+| FR-IBB-001 | A `Configuration` shall have a level (`system`, `rack`, `scalable_unit`, `row` or `site`) and may contain lower-level configurations and parts, each with quantity and alternates. A requisition or RFQ may target any level. Quantities roll up through the levels. | US-049 | 2 | F12, F34, DCBBS-2 | Given a scalable unit of 8 racks of 18 systems, when a requisition targets it, then the RFQ lists the unit with its rack and system children and the rolled-up system count is 144. (Should) |
+| FR-IBB-002 | A quote covering more than one layer (BR-040) shall be recorded with one line per layer: price, lead time, warranty, and scope inclusions and exclusions. A bundle discount is its own line. A quote with only a bundle price is recorded as `not_decomposed`, and the Negotiator sends an `RFI` asking for layer prices. | US-049 | 2 | F24, F26, E3, DCBBS-1 | Given an email quote with one total across four layers, when read, then the quote is `not_decomposed` and an `RFI` for layer prices is sent. (Should) |
+| FR-IBB-003 | The sourcing event shall compare offers layer by layer on the same configuration scope. A layer a supplier did not quote shows "not quoted", never zero. Totals are compared only between offers that cover the same layers. Each layer shows its should-cost band, or "no should-cost model". | US-049 | 2 | F1, F24, F26, DCBBS-1, DCBBS-3 | Given one bundled quote and two single-layer quotes, when compared, then the layers each supplier did not quote show "not quoted" and no total compares offers of different scope. (Should) |
+| FR-IBB-004 | A quote, ASN or manifest for a rack-level or higher configuration shall declare the maker of every part in a critical part family (BR-012) that the integrator chose. Each declared maker is screened with the bidder (FR-S2P-006) and checked against the part's approved manufacturers. A held maker excludes the quote, as in FR-S2P-006. An undeclared or unapproved maker takes the award out of mandate (HITL-04). | US-050 | 2 | F34, F37, F65, HP step 5, DCBBS-2 | Given a rack quote declaring an optics maker not approved for that part, when the award is evaluated, then it escalates with reason `unapproved_manufacturer`. (Should) |
+| FR-IBB-005 | Before an award or PO, the exposure view shall list every layer that each supplier group (common ultimate parent, FR-KYS-006) would supply for the same site or scalable unit, counting open POs and the proposed award. At or above the BR-041 threshold the award escalates to the CSCO (HITL-21) with the layer list, the alternatives quoted, and links to scenarios K12 and K13. | US-051 | 2 | F1, F71, K12, K13, DCBBS-1, DCBBS-8 | Given open POs making group G the source of compute and in-rack cooling at site S, when an award to G for services at S is proposed, then it escalates to the CSCO listing three layers. (Should) |
+| FR-IBB-006 | A PO line for a rack-level or higher configuration shall state the factory validation levels it requires (BR-042). The Reader extracts each validation report that comes with an ASN into a `ValidationReport` linked to the PO line and serials. A missing report, or one whose overall result is not `pass`, raises a receipt exception (HITL-19) and flags the serials `validation_missing` or `validation_failed`. It does not reject the shipment. | US-052 | 2 | F36, E6, G4, DCBBS-4 | Given a PO line requiring L12, when its ASN arrives without an L12 report, then a receipt exception exists and the expected serials are flagged `validation_missing`. (Could) |
+| FR-IBB-007 | Figures a supplier states about performance, capacity, efficiency, delivery or service (for example time-to-online, cooling capacity, on-site response time) shall be stored as `SupplierClaim` records with source evidence, as-of date and a status of `claimed`, `contracted` or `verified`, and used only as BR-043 allows. Two claims from one supplier that disagree on the same attribute raise HITL-14. | US-053 | 2 | F31, D6, I9, DCBBS-5, DCBBS-6, DCBBS-9 | Given two supplier documents stating different cooling capacities for the same product, when read, then both claims are stored and a conflicting-evidence item exists. (Could) |
+| FR-IBB-008 | A PO line may be of kind `service` (for example site survey, racking and stacking, installation, on-site support) with milestones. A service milestone is received only when the acceptor named on the PO line accepts it (HITL-22), never by serial scan. The three-way match for a service line uses the accepted milestone in place of a goods receipt. | US-054 | 2 | F29, F33, DCBBS-8 | Given a racking-service line, when its invoice arrives before the milestone is accepted, then the match fails with reason `milestone_not_accepted`. (Could) |
+
+### 5.18 Later scope (Phases 3–6) — requirement stubs
 
 Stubs only. Each must be specified before its phase starts.
 
@@ -482,11 +544,21 @@ Stubs only. Each must be specified before its phase starts.
 | FR-AST-003 | Collateral and lender reporting (needs OQ-05) | US-043 | 3 | F57 |
 | FR-AST-004 | RMA loop with supplier agents and cross-ship | — | 3 | G5, F58 |
 | FR-AST-005 | Freight booking under lane mandates; high-value cargo security; customs preparation for a licensed broker | — | 3 | F51–F53 |
+| FR-AST-006 | As-built handover pack (port map, cabling plan, firmware baseline hashes, validation reports, warranty terms) checked for completeness as a gate before customer acceptance | US-055 | 3 | F19, F55, E6, DCBBS-4, DCBBS-8 |
+| FR-AST-007 | The Integrator desk accepts L10–L12 validation results against the configuration's test plan and writes them to each serial's Hardware Passport | US-052 | 3 | F36, E6, DCBBS-4 |
+| FR-AST-008 | Read-only infrastructure-management connector over an open standard (DMTF Redfish first), with each vendor's tools mapped in a registry as for RISK_PROVIDER: inventory, firmware versions, power, CDU and leak alerts become signals. No DCIM or BMS replacement (non-goal 6) | US-056 | 3 | F37, F58, DCBBS-7 |
+| FR-AST-009 | Liquid-cooling traceability: serialised CDUs and manifolds; cold-plate and coolant lots with their specification; leak or quality signals hold affected lots (scenario K13) | US-056 | 3 | F38, F39, K13, DCBBS-5 |
+| FR-AST-010 | Integrator service levels (on-site response time, parts replacement) measured from service events and fed to supplier scorecards | — | 3 | F31, F33, DCBBS-8 |
+| FR-AST-011 | Time-to-online per deployment: promised against actual dates for PO, factory validation, shipment, arrival on site, racked and online | — | 3 | §5, F31, DCBBS-9 |
 | FR-BLD-001 | Long-lead equipment: latest order date, slot reservations under deposit mandates, witness tests | US-044 | 4 | G3, F43 |
 | FR-BLD-002 | Project controls, permits, power procurement and commissioning | US-044 | 4 | F42, F44–F48 |
+| FR-BLD-003 | Power-envelope sizing: megawatts and platform into scalable units and layer quantities, with variance against an integrator's blueprint bill of materials | US-057 | 4 | F10, F12, DCBBS-3 |
+| FR-BLD-004 | Integrator-supplied facility equipment (in-row and sidecar CDUs, rear-door heat exchangers, cooling towers, power shelves, battery backup units) handled as long-lead equipment with slot reservations and witness tests | US-058 | 4 | F43, DCBBS-1, DCBBS-5 |
+| FR-BLD-005 | Integrator turnkey build services (design, permitting, general contracting) controlled as construction contracts: milestones, change orders, engineer-of-record sign-off | — | 4 | F44–F47, DCBBS-8 |
 | FR-IBP-001 | Simulator-driven IBP and quarterly runs of scenario library K1–K16 | US-045 | 5 | F13, F72, K |
 | FR-IBP-002 | Customer end-use and end-user screening (needs OQ-14) | US-046 | 5 | F18 |
 | FR-IBP-003 | Tier A supplier agents over A2A with identity binding and mandate disclosure | US-047 | 5 | E2, E4 |
+| FR-IBP-004 | Reference-architecture and blueprint change impact: find the configurations, open orders and plans built on a changed blueprint | — | 5 | F14, F35, DCBBS-10 |
 | FR-CIR-001 | Decommissioning and sanitisation to NIST SP 800-88, resale with buyer screening, recycling | US-048 | 6 | G6, F60–F62 |
 | FR-CIR-002 | Retire remaining legacy applications against the portfolio target | — | 6 | J |
 
@@ -556,7 +628,7 @@ stale data as current.
 
 - **Purpose:** one RFQ from requisition to award.
 - **Who:** requester (own events, own fields only), Negotiator owner, mandate issuers, auditors.
-- **Key elements:** requisition; invited and excluded suppliers with reasons; quotes in a comparison grid; should-cost band; negotiation transcript; screening status per bidder; award proposal and Policy result.
+- **Key elements:** requisition; invited and excluded suppliers with reasons; quotes in a comparison grid; should-cost band; negotiation transcript; screening status per bidder; award proposal and Policy result. For building-block configurations (§5.17): a layer-by-layer grid with "not quoted" gaps and `not_decomposed` bundles marked; declared makers with their screening and approved-manufacturer status; the supplier-group concentration view; supplier claims labelled as claims with their status.
 - **Actions available:** approve or modify award (when escalated); pause the event; send to the strategic owner.
 - **Empty state:** "Waiting for quotes", with each supplier's channel and last contact time.
 - **Error state:** quotes that failed the Reader show as "needs verification"; a supplier that bounced shows "undeliverable".
@@ -564,7 +636,7 @@ stale data as current.
 ### 6.8 Order-to-pay record
 
 - **Purpose:** one PO from issue to payment.
-- **Key elements:** PO and changes; `POAck`; ASNs; expected and received serials; receipt discrepancies; invoices and match result line by line; holds.
+- **Key elements:** PO and changes; `POAck`; ASNs; expected and received serials; receipt discrepancies; invoices and match result line by line; holds. For building-block lines (§5.17): required validation levels and the reports received, with `validation_missing` or `validation_failed` flags; service milestones with acceptor and acceptance status.
 - **Who and actions:** Buyer owner and controller resolve exceptions; site lead resolves receipt discrepancies.
 - **Empty state:** "Awaiting acknowledgement" with the chase schedule.
 - **Error state:** match failures show which of PO, receipt or invoice disagrees and by how much.
@@ -747,14 +819,19 @@ in Appendix F but are needed by a v1 screen.
 | `Person` | name, role, share, source, as-of date (FR-LIC-004) | 6.4 (restricted) |
 | `Agent` | desk name, charter version, owner, autonomy per action class, budgets, model family, kill-switch state; or counterparty hosted agent with its supplier | 6.10 |
 | `HumanUser` **(added)** | name, roles, delegates, backup per role | 6.1, 6.11 |
-| `PartFamily` / `Part` | category, criticality designation (BR-012) / manufacturer part number, family, approved suppliers | 6.4, 6.5, 6.7 |
-| `Configuration` / `BOM` | rack configuration and its parts with quantities and alternates (minimal in v1) | 6.7 |
+| `PartFamily` / `Part` | category, criticality designation (BR-012) / manufacturer part number, family, approved suppliers, approved manufacturers (FR-IBB-004) | 6.4, 6.5, 6.7 |
+| `Configuration` / `BOM` | level (`system`, `rack`, `scalable_unit`, `row`, `site`; FR-IBB-001), child configurations and parts with quantities and alternates, required validation levels (BR-042) (minimal in v1) | 6.7 |
 | `Requisition` **(added; F28 names it)** | part or configuration, quantity, need-by, ship-to site, budget ref, requester | 6.7 |
-| `RFQ` / `Quote` | invited and excluded suppliers / FR-S2P-003 fields, round, channel | 6.7 |
+| `RFQ` / `Quote` | invited and excluded suppliers / FR-S2P-003 fields, round, channel, layer lines or `not_decomposed` (FR-IBB-002) | 6.7 |
+| `QuoteLayerLine` **(added; §5.17)** | quote, layer (BR-040), price, lead time, warranty, inclusions, exclusions | 6.7 |
+| `DeclaredComponent` **(added; §5.17)** | quote, ASN or manifest; part family; declared maker (LegalEntity); screening result; approved-manufacturer check | 6.7, 6.8 |
+| `SupplierClaim` **(added; §5.17)** | supplier, attribute, value and unit, source evidence, as-of date, status (`claimed`, `contracted`, `verified`; BR-043) | 6.7 |
 | `Contract` / `Clause` | template or bespoke, signatories, status / clause text, standard or deviation | 6.7 |
-| `PurchaseOrder` / `POLine` | supplier, award or frame ref, status, ack time / part, qty, price, need-by | 6.8 |
+| `PurchaseOrder` / `POLine` | supplier, award or frame ref, status, ack time / kind (`goods` or `service`), part or configuration, qty, price, need-by, required validation levels, milestones (service lines) | 6.8 |
+| `ServiceMilestone` **(added; §5.17)** | PO line, description, named acceptor, due date, status (`open`, `accepted`, `rejected`), evidence | 6.8 |
 | `ASN` / `Shipment` | expected serials / carrier, status events | 6.8 |
-| `Serial` | manufacturer serial, part, PO line, status (`expected`, `received`, `held`) | 6.8 |
+| `Serial` | manufacturer serial, part, PO line, status (`expected`, `received`, `held`), validation flag (`validation_missing`, `validation_failed`) | 6.8 |
+| `ValidationReport` **(added; §5.17)** | level (BR-042), PO line, serials covered, test plan reference, overall result, issuer, issued date, source evidence | 6.8 |
 | `Receipt` | ASN, scanned serials, discrepancies | 6.8 |
 | `Invoice` / `Payment` / `PaymentRun` **(added)** | number, lines, match result / amount, rail reference / included and excluded lines, approver | 6.8, 6.9 |
 | `RiskFactor` | Provider id, native factor ID, definition version, mapped signal | 6.5 |
@@ -783,7 +860,8 @@ in Appendix F but are needed by a v1 screen.
 `BankDetailsChangeRequested` / `BankDetailsVerified` (added), `MandateIssued`,
 `MandateRevoked`, `PolicyPublished` (added), `DecisionRecorded`, `EscalatedToHuman`
 (added), `KillSwitchThrown` / `KillSwitchReleased` (added), `DeskPromoted` /
-`DeskDemoted` (added), `MessageQuarantined` (added).
+`DeskDemoted` (added), `MessageQuarantined` (added), `ValidationReportReceived` (added),
+`SupplierClaimRecorded` (added), `ServiceMilestoneAccepted` (added).
 
 **Retention / deletion.** Retention periods are a legal decision (OQ-29). Until set:
 Ledger events and evidence are never deleted automatically (proposed — confirm);
@@ -861,6 +939,8 @@ in concept Appendix A, and actions that legally need a named person never go abo
 | HITL-18 | Release a kill switch | Desk owner or CSCO; global needs CSCO and CISO | Yes |
 | HITL-19 | Receipt discrepancy or physical exception | Site lead | — |
 | HITL-20 | Reader extraction below confidence threshold | Owner of the receiving desk | — |
+| HITL-21 | Accept cross-layer supplier-group concentration at or above the BR-041 threshold (FR-IBB-005) | CSCO | — |
+| HITL-22 | Accept a service milestone (FR-IBB-008) | Acceptor named on the PO line | Yes (v1) |
 | — | Export licence and classification determinations; PE sign-offs | Empowered official; engineer of record | Yes (non-goal 5) |
 
 - **BR-030 Routing** follows concept H4: out of mandate → issuer; low confidence → desk
@@ -944,6 +1024,34 @@ model failure (FR-DSK-008). Electrical and mechanical safety stays with humans.
   must be re-approved within 30 days (proposed — confirm).
 - **A supplier exits.** Hosted agent disabled; open POs raised to the Buyer's owner;
   records retained.
+- **An integrator will not name a sub-component maker** (FR-IBB-004). The quote stays
+  valid but goes out of mandate (HITL-04) with reason `undeclared_manufacturer`; it is
+  never auto-awarded.
+- **A bundle price is lower than the sum of its layers.** The difference is recorded as
+  a bundle-discount line (FR-IBB-002). Whether it is worth the concentration is a human
+  decision (HITL-21), not a price rule.
+
+### 8.8 Integrated building-block rules
+
+- **BR-040 Layers** (proposed — confirm, OQ-33): `compute_systems` (servers and GPU
+  systems), `in_rack` (networking, power shelves, cold plates, in-rack cooling),
+  `in_row` (row CDUs, rear-door heat exchangers, row power), `site_infrastructure`
+  (cooling towers, battery backup, switchgear, facility build), `software` (cluster and
+  infrastructure management, operating software), `services` (survey, design,
+  integration, installation, on-site support). The list is versioned data.
+- **BR-041 Concentration** (proposed — confirm, OQ-31): for one site or scalable unit,
+  a supplier group supplying 2 or more layers is shown on the exposure view; 3 or more
+  layers takes the award out of mandate to the CSCO (HITL-21). A group is entities with
+  a common ultimate parent (FR-KYS-006).
+- **BR-042 Validation levels** (proposed — confirm, OQ-32): `L10` = system-level
+  burn-in and functional test; `L11` = rack-level integration, power-on and test; `L12` =
+  multi-rack or cluster test including the network fabric. Pass criteria come from the
+  test plan on the configuration, not from the supplier's report.
+- **BR-043 Claims are not facts.** A `SupplierClaim` with status `claimed` may be shown
+  and used to shortlist, but never scores an award, sets a need-by date or counts as
+  received. A claim becomes `contracted` when it appears in a signed contract or PO term,
+  and `verified` when our own events measure it (for example a receipt date or a
+  validation report).
 
 ## 9. Non-functional requirements
 
@@ -1055,6 +1163,9 @@ specification.
 | OQ-28 | Terms for the hosted supplier agent: data ownership, liability, cost | Legal | Before Phase 2 | FR-ENV-003 |
 | OQ-29 | Retention periods per record class, including Person data | Legal | Before Phase 1 live | NFR-RET-001, NFR-RET-003 |
 | OQ-30 | Availability targets and exception-desk cover hours | CSCO / platform team | PLAN | NFR-AVL-001. Deferred to PLAN |
+| OQ-31 | Buying strategy for integrated building blocks: when is a single integrator for several layers acceptable, and at what concentration? | CSCO | Before Phase 2 | BR-041 threshold, HITL-21 (provisional: show at 2 layers, escalate at 3) |
+| OQ-32 | Validation levels we require per configuration level, their definitions and pass criteria | Hardware engineering / quality | Before Phase 2 | BR-042, FR-IBB-006 (provisional L10–L12 definitions) |
+| OQ-33 | Review at least two other OEM or ODM building-block offers to confirm the layer taxonomy and features are not shaped by one vendor | Author | Before PLAN | BR-040, §5.17. Research task; see [`research/supermicro-dcbbs.md`](./research/supermicro-dcbbs.md) limits |
 
 **The three places this draft is least certain** (prompt #2):
 
