@@ -6,7 +6,7 @@ asset lifecycle, and continuous third-party risk and resilience. It is designed 
 greenfield to replace a ~140-application legacy portfolio with one integrated platform.
 
 **Status:** concept reviewed and signed off. Specification drafted and awaiting human review
-(30 open questions, 11 of them blocking). A static demo website is built; no production code
+(33 open questions, 11 of them blocking). A static demo website is built; no production code
 yet.
 
 **Live demo:** <https://yorkerhodes3.github.io/neocloud-supply-os/> (served from `docs/`
@@ -29,6 +29,8 @@ once GitHub Pages is enabled; see [Deploying](#deploying-the-site)).
 | Appendices J–M | Legacy collapse map, resilience scenario library, phased roadmap, sources |
 
 ➡️ **[SPECIFICATION.md](SPECIFICATION.md)**: the v1 specification (Roadmap Phases 0–2): user stories, functional and non-functional requirements, data model, controls and open questions. Draft, pending human review.
+
+➡️ **[research/](research/)**: cited market and vendor research notes that inform the specification. First note: [Supermicro DCBBS](research/supermicro-dcbbs.md) (integrated data center building blocks), which informs the feature list in SPECIFICATION §5.17.
 
 ## The demo website (`docs/`)
 
@@ -125,6 +127,7 @@ This repo follows the
 - [x] `CONCEPT-IDEA.md`: drafted
 - [x] Human review of CONCEPT-IDEA (sign-off box in the doc): completed by the author, 2026-11-02
 - [x] `SPECIFICATION.md`: drafted (CoLab prompt #2), pending human review
+- [x] `research/supermicro-dcbbs.md`: vendor research; informs SPECIFICATION §5.17 (v0.2.0)
 - [ ] Human review of SPECIFICATION (sign-off box in the doc; see §12 for the 11 blocking questions)
 - [ ] `PLAN.md`: CoLab prompt #3
 - [ ] `BACKLOG.md`: CoLab prompt #4
