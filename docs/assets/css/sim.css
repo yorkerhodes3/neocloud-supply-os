@@ -1,6 +1,19 @@
 /* Simulation page. Every colour, font and radius comes from the brand variables (themes.js → derive). */
 
 .page-sim { --rail-l: 336px; --rail-r: 384px; --bar-h: 62px; --gap: 14px; }
+.latency-impact { padding: 18px 0; background: var(--surface); border-bottom: 1px solid var(--border); }
+.impact-heading { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 6px 18px; margin-bottom: 12px; }
+.impact-heading h2 { font-family: var(--font-display); font-size: 1.4rem; }
+.impact-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.impact-card { padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); min-width: 0; }
+.impact-card h3 { font-family: var(--font-mono); color: var(--muted); font-size: 0.64rem; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px; }
+.impact-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.impact-pair span, .impact-pair small { display: block; color: var(--muted); font-size: 0.7rem; }
+.impact-pair strong, .impact-value { display: block; font-family: var(--font-display); font-size: clamp(1.6rem, 2.4vw, 2.4rem); line-height: 1.2; font-variant-numeric: tabular-nums; color: var(--accent); margin: 4px 0; }
+.impact-pair > :last-child strong { color: var(--glow); }
+.impact-card p { margin-top: 8px; font-size: 0.76rem; line-height: 1.5; }
+.impact-card .impact-detail, .impact-method { color: var(--muted); font-size: 0.67rem; line-height: 1.5; }
+.impact-method { margin-top: 10px; max-width: 110ch; }
 .sim-stage {
   position: relative; height: calc(100svh - 69px); min-height: 700px; overflow: hidden; isolation: isolate;
   background: var(--bg); border-bottom: 1px solid var(--border);
@@ -105,13 +118,17 @@ table.kpi tr.kpi-top td.l { font-family: var(--font-display); font-weight: var(-
 .chart .ln { stroke: var(--accent); stroke-width: 2.2; }
 .chart .ll { stroke: var(--glow); stroke-width: 2.2; }
 .chart .area { fill: color-mix(in oklab, var(--accent) 14%, transparent); stroke: none; }
+.chart .band-n { fill: color-mix(in oklab, var(--accent) 20%, transparent); stroke: none; }
+.chart .band-l { fill: color-mix(in oklab, var(--glow) 20%, transparent); stroke: none; }
 .chart text { font-family: var(--font-mono); font-size: 8px; fill: var(--muted); }
+.mc-summary { margin-top: 8px; line-height: 1.5; }
 .legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 6px; color: var(--muted); font-family: var(--font-mono); }
 .legend i { display: inline-block; vertical-align: middle; margin-right: 5px; }
 .legend .ln { width: 14px; height: 2px; background: var(--accent); }
 .legend .ln.l { background: var(--glow); }
 .legend .ln.p { background: repeating-linear-gradient(90deg, var(--fg) 0 3px, transparent 3px 6px); opacity: 0.6; }
 .legend .tick { width: 1px; height: 9px; background: var(--warn); }
+.legend .range { width: 14px; height: 8px; background: linear-gradient(90deg, color-mix(in oklab, var(--accent) 35%, transparent) 50%, color-mix(in oklab, var(--glow) 35%, transparent) 50%); }
 
 /* ---------- tabs ---------- */
 .tabbar { display: flex; gap: 2px; padding: 6px; border-bottom: 1px solid var(--border); flex: none; }
@@ -292,6 +309,7 @@ table.sweep .pending td { color: var(--muted); }
   .sim-card .panel-body.more { -webkit-mask-image: none; mask-image: none; }
 }
 @media (max-width: 640px) {
+  .impact-grid { grid-template-columns: minmax(0, 1fr); }
   .sim-bar { gap: 6px; padding: 0 8px; height: auto; min-height: var(--bar-h); flex-wrap: wrap; padding: 8px; margin-top: 10px; }
   .sim-map { height: 56svh; }
   .sim-bar #homeBtn, .sim-bar #back { display: none; }

@@ -38,36 +38,74 @@ const CONN = { A: 'A2A', B: 'hosted agent', C: 'Envoy → email' };
 export const LEGACY_ROLE = { Planner: 'Planning team', Screener: 'Compliance', Negotiator: 'Buyer', Registrar: 'Receiving', Customs: 'Customs broker', Deployer: 'Site ops', Commissioner: 'Commissioning', 'Project Controller': 'PMO', 'Power Broker': 'Energy team', Returns: 'RMA desk', Dispatcher: 'Logistics', Conductor: 'Ops lead', Allocator: 'Planning team', Watchtower: 'Inbox', Payables: 'AP clerk', Auditor: 'Internal audit', Mapper: 'Inbox', Provenance: 'Trade compliance', 'LLE Expeditor': 'Buyer', 'Category Strategist': 'Category manager', 'Treasury Aide': 'Treasury', Resilience: 'Ops lead', 'Quality Sentinel': 'Quality' };
 const FAM_DESK = { Sourcing: 'Negotiator', Ordering: 'Buyer', Collaboration: 'Planner', Logistics: 'Dispatcher', Finance: 'Payables', 'Risk and compliance': 'Screener', 'Quality and change': 'Quality Sentinel' };
 
-/** Administrative latency in days, triangular (min, mode, max). Physical durations live in MATERIALS and transit(). */
+/** Processing durations in days, triangular (min, mode, max); calendar waits are separate below. */
 export const ADMIN = {
   native: {
     plan: [0.02, 0.05, 0.12], screen: [0.01, 0.02, 0.06],
-    source: { A: [0.05, 0.12, 0.3], B: [0.3, 0.6, 1.2], C: [1.0, 1.8, 3.5] },
-    order: { A: [0.01, 0.03, 0.08], B: [0.15, 0.4, 0.9], C: [0.5, 1.2, 2.5] },
+    source: { A: [0.05, 0.12, 0.3], B: [0.3, 0.6, 1.2], C: [0.02, 0.06, 0.15] },
+    order: { A: [0.01, 0.03, 0.08], B: [0.15, 0.4, 0.9], C: [0.01, 0.03, 0.08] },
     clear: [0.2, 0.5, 1.2], receive: [0.04, 0.1, 0.25], workorder: [0.02, 0.05, 0.1],
     install: [2, 2.5, 3.5], burnin: [2, 2.5, 3.5], energize: [6, 8, 11], commission: [4, 5, 7],
     human: [0.08, 0.3, 1.0], rma: [1, 2, 3], invoice: [0.1, 0.3, 0.8], pay: [10, 14, 15],
   },
   legacy: {
-    plan: [1, 2, 4], planCycle: 7, screen: [0.5, 1.5, 4],
-    source: { A: [5, 8, 14], B: [5, 8, 14], C: [6, 10, 16] },
-    order: { A: [1.5, 3, 6], B: [1.5, 3, 6], C: [2, 4, 8] },
-    clear: [1, 2.5, 6], docError: 0.12, docFix: [3, 5, 8], receive: [1, 2, 4], workorder: [0.5, 1, 2],
+    plan: [1, 2, 4], planCycle: 7, screen: [0.08, 0.25, 0.75],
+    source: { A: [0.5, 1, 2], B: [0.5, 1, 2], C: [0.5, 1.5, 3] },
+    order: { A: [0.08, 0.25, 0.75], B: [0.08, 0.25, 0.75], C: [0.15, 0.5, 1] },
+    clear: [1, 2.5, 6], docError: 0.12, docFix: [3, 5, 8], receive: [0.08, 0.25, 0.75], workorder: [0.02, 0.08, 0.25],
     install: [2.5, 3.5, 5], burnin: [4, 6, 9], energize: [9, 12, 17], commission: [7, 10, 14],
-    human: [1, 3, 7], rma: [8, 12, 20], invoice: [2, 5, 10], pay: [28, 32, 45],
+    human: [0.08, 0.3, 1], rma: [8, 12, 20], invoice: [2, 5, 10], pay: [28, 32, 45],
   },
 };
 
+// Synthetic elapsed calendar days, not measured benchmarks. A reschedule is a second
+// calendar booking, so a single coordination task can wait as long as four weeks.
+export const COORDINATION = {
+  regimes: [
+    { id: 'same-day', label: 'Same-day response', days: [0.02, 0.12, 0.5] },
+    { id: 'follow-up', label: 'Email / follow-up', days: [0.5, 2, 5] },
+    { id: 'meeting', label: 'Find a meeting slot', days: [3, 7, 14] },
+    { id: 'rescheduled', label: 'Meeting rescheduled', days: [7, 14, 28] },
+  ],
+  tasks: {
+    screen: { label: 'Compliance clarification', weights: [0.55, 0.30, 0.12, 0.03] },
+    source: { label: 'Quote / award coordination', weights: [0.15, 0.45, 0.30, 0.10] },
+    order: { label: 'PO acknowledgement', weights: [0.55, 0.30, 0.12, 0.03] },
+    receive: { label: 'Receiving hand-off', weights: [0.55, 0.30, 0.12, 0.03] },
+    workorder: { label: 'Crew scheduling', weights: [0.45, 0.30, 0.20, 0.05] },
+    acceptance: { label: 'Acceptance sign-off', weights: [0.45, 0.30, 0.20, 0.05] },
+    human: { label: 'Human approval / exception', weights: [0.35, 0.35, 0.22, 0.08] },
+  },
+};
+
+const COORD_ESTIMATES = Object.fromEntries(Object.entries(COORDINATION.tasks).map(([task, { weights }]) => {
+  const mean = COORDINATION.regimes.reduce((sum, r, i) => sum + weights[i] * r.days.reduce((a, b) => a + b, 0) / 3, 0);
+  let lo = Math.min(...COORDINATION.regimes.map(r => r.days[0])), hi = Math.max(...COORDINATION.regimes.map(r => r.days[2]));
+  for (let i = 0; i < 32; i++) {
+    const x = (lo + hi) / 2;
+    const cdf = COORDINATION.regimes.reduce((sum, { days: [a, b, c] }, j) => {
+      const f = x <= a ? 0 : x >= c ? 1 : x <= b ? (x - a) ** 2 / ((c - a) * (b - a)) : 1 - (c - x) ** 2 / ((c - a) * (c - b));
+      return sum + weights[j] * f;
+    }, 0);
+    if (cdf < 0.8) lo = x; else hi = x;
+  }
+  return [task, { mean, p80: (lo + hi) / 2 }];
+}));
+
 export const ASSUMPTIONS = [
   ['Planning run (BOM explode, need dates)', 'minutes, event-driven', '1–4 days, after a weekly planning cycle', 'modelled'],
-  ['Supplier screen', 'Risk-provider re-screen in minutes, continuous', 'name check, 0.5–4 days; UBO only at onboarding', 'modelled'],
-  ['RFQ → quote → award', 'A2A minutes; hosted agent hours; Envoy 1–3.5 days', '5–16 days (email, comparison, approval chain)', 'modelled'],
-  ['PO → acknowledgement', 'minutes to 2.5 days by supplier tier', '1.5–8 days', 'modelled'],
+  ['Supplier screen', 'Risk-provider re-screen in minutes, continuous', '2–18 hours processing + a sampled clarification wait; UBO only at onboarding', 'modelled'],
+  ['RFQ → quote → award', 'A2A minutes; hosted agent hours; Envoy waits on a human supplier', '0.5–3 days processing + a sampled quote / award coordination wait', 'modelled'],
+  ['PO → acknowledgement', 'minutes / hours for agent suppliers; Envoy waits on a human supplier', '2–24 hours processing + a sampled acknowledgement wait', 'modelled'],
   ['Customs entry', 'pre-filed, 0.2–1.2 days', '1–6 days; 12% need document fixes (+3–8)', 'modelled'],
-  ['Receive & register serials', '1–6 hours (scan to ledger)', '1–4 days', 'modelled'],
+  ['Receive & register serials', '1–6 hours (scan to ledger)', '2–18 hours processing + a sampled hand-off wait', 'modelled'],
+  ['Crew work order', 'minutes, automatically scheduled', '0.5–6 hours processing + a sampled crew-scheduling wait', 'modelled'],
   ['Install per lot (8 racks)', '2–3.5 days, kitted and sequenced', '2.5–5 days', 'modelled'],
-  ['Burn-in & acceptance', '2–3.5 days, automated test plans', '4–9 days, manual sign-off', 'modelled'],
-  ['Human decision latency', '2 hours – 1 day (exceptions only)', '1–7 days (every approval)', 'modelled'],
+  ['Burn-in & acceptance', '2–3.5 days, automated test plans', '4–9 days manual testing + a sampled acceptance-sign-off wait', 'modelled'],
+  ['Human decision latency', '2 hours – 1 day processing + calendar wait (exceptions / day-one approvals)', 'same human processing and calendar-wait distribution', 'modelled'],
+  ['Coordination spectrum (elapsed calendar days)', 'automated tasks skip human calendars; tier-C suppliers and human approvals do not', 'same-day 0.02–0.5 d; follow-up 0.5–5 d; meeting 3–14 d; rescheduled 7–28 d', 'modelled'],
+  ['Per-task variability', 'seeded separately from the physical world', 'task-specific mixture weights; independent draw per line, stage and re-source attempt', 'modelled'],
+  ['50-run Monte Carlo', 'same physical seed, current policy and autonomy; exceptions auto-resolve', '50 distinct latency seeds; P10 / P50 / P90, not confidence intervals or forecasts', 'modelled'],
   ['Rack call-off', 'just-in-time: p80 lead + buffer before forecast hall-ready', 'as soon as possible', 'policy'],
   ['Manufacture, transit, construction', 'identical in both modes (common random numbers)', 'identical', 'illustrative'],
   ['Utility energisation dates', 'fixed per site (104 / 112 / 118)', 'same', 'illustrative'],
@@ -107,6 +145,7 @@ export class Sim {
   /**
    * @param {object} o
    * @param {number} o.seed
+   * @param {number} [o.latencySeed] independent coordination seed; defaults to the physical seed
    * @param {'native'|'legacy'} o.mode
    * @param {object} [o.scenario]  scenario object from scenarios.js (or null for baseline)
    * @param {boolean} [o.autoResolve] resolve human decisions with the recommended option after modelled latency
@@ -114,12 +153,12 @@ export class Sim {
    * @param {'earned'|'dayone'} [o.autonomy] earned = desks act within mandate (L3); dayone = every PO step needs approval
    * @param {string|object} [o.provider] risk-provider registry id or entry; changes log labels only, never outcomes
    */
-  constructor({ seed = 42, mode = 'native', scenario = null, autoResolve = true, policy = 'jit', autonomy = 'earned', buffer = 10, horizon = 240, provider = undefined } = {}) {
-    Object.assign(this, { seed: seed >>> 0, mode, scenario, autoResolve, policy, autonomy, buffer, horizon });
+  constructor({ seed = 42, latencySeed = seed, mode = 'native', scenario = null, autoResolve = true, policy = 'jit', autonomy = 'earned', buffer = 10, horizon = 240, provider = undefined } = {}) {
+    Object.assign(this, { seed: seed >>> 0, latencySeed: latencySeed >>> 0, mode, scenario, autoResolve, policy, autonomy, buffer, horizon });
     this.P = typeof provider === 'object' && provider ? provider : riskProvider(provider);
     this.A = ADMIN[mode];
     this.t = 0; this.seq = 0; this.q = new Heap();
-    this.ledger = []; this.msgs = []; this.alerts = []; this.decisions = []; this.detections = [];
+    this.ledger = []; this.msgs = []; this.alerts = []; this.decisions = []; this.detections = []; this.latencies = [];
     this.msgCount = 0; this.msgFam = {}; this.deskCount = {}; this.deskLast = {};
     this.humanApprovals = 0;
     this.cost = { premium: 0, tariff: 0, expedite: 0 };
@@ -135,8 +174,17 @@ export class Sim {
   rng(key) { return new Rng(hashSeed(`${this.seed}|${key}`)); }
   /** Physical draw: same in both modes for the same key. */
   phys(key, r3) { return tri(this.rng(`phys|${key}`), r3); }
-  /** Administrative draw: keyed by mode. */
-  adm(key, r3) { return tri(this.rng(`${this.mode}|${key}`), r3); }
+  adminRng(key) { return new Rng(hashSeed(`${this.latencySeed}|${this.mode}|${key}`)); }
+  /** Administrative draw: independent of physical draws, keyed by task instance and mode. */
+  adm(key, r3) { return tri(this.adminRng(key), r3); }
+  coordination(key, task) {
+    const r = this.adminRng(`coord|${key}`);
+    const regime = r.weighted(COORDINATION.regimes, COORDINATION.tasks[task].weights);
+    const days = tri(r, regime.days);
+    this.latencies.push({ t: this.t, key, task, regime: regime.id, days });
+    return days;
+  }
+  humanDelay(key) { return this.adm(key, this.A.human) + this.coordination(key, 'human'); }
   at(t, fn) { this.q.push({ t: Math.max(t, this.t), s: this.seq++, fn }); }
   after(dt, fn) { this.at(this.t + dt, fn); }
   hook(kind, fn) { this.hooks[kind].push(fn); }
@@ -242,7 +290,7 @@ export class Sim {
     for (const l of block) this.hold(l, d.id);
     this.log(desk, `EscalateToHuman ${d.id}: ${title}`, { sev: 'human', kind: 'decision', human: false });
     if (this.mode === 'legacy' || this.autoResolve) {
-      const lat = latency ?? this.adm(`human|${d.id}`, this.A.human);
+      const lat = latency ?? this.humanDelay(`human|${d.id}`);
       this.after(lat, () => d.status === 'open' && this.resolve(d.id, rec, this.mode === 'legacy' ? 'approval chain (modelled)' : 'auto: modelled human'));
     }
     return d;
@@ -320,24 +368,25 @@ export class Sim {
   // ---------- durations ----------
   _dur(l, stage) {
     const A = this.A, k = `${l.id}|${stage}|${l.attempt}`, s = supplier(l.supId);
-    const approval = () => (this.mode === 'native' && this.autonomy === 'dayone') ? (this.humanApprovals++, this.adm(`appr|${k}`, ADMIN.native.human)) : 0;
+    const wait = task => this.coordination(k, task);
+    const approval = () => (this.mode === 'native' && this.autonomy === 'dayone') ? (this.humanApprovals++, this.humanDelay(`appr|${k}`)) : 0;
     switch (stage) {
-      case 'plan': return this.adm(k, A.plan) + (this.mode === 'legacy' ? this.rng(`legacy|cycle|${l.id}`).float(0, A.planCycle) : 0);
+      case 'plan': return this.adm(k, A.plan) + (this.mode === 'legacy' ? this.adminRng(`cycle|${l.id}`).float(0, A.planCycle) : 0);
       case 'release': return 0;
-      case 'screen': return this.adm(k, A.screen) + approval();
-      case 'source': return this.adm(k, A.source[s.conn]) + approval();
-      case 'order': return this.adm(k, A.order[s.conn]) + approval();
+      case 'screen': return this.adm(k, A.screen) + (this.mode === 'legacy' ? wait('screen') : 0) + approval();
+      case 'source': return this.adm(k, A.source[s.conn]) + (this.mode === 'legacy' || s.conn === 'C' ? wait('source') : 0) + approval();
+      case 'order': return this.adm(k, A.order[s.conn]) + (this.mode === 'legacy' || s.conn === 'C' ? wait('order') : 0) + approval();
       case 'make': return this.phys(`${l.id}|make|${l.supId}`, l.make || l.M.make);
       case 'build': return this.phys(`${l.id}|build`, [72, 84, 100]) + l.hall.idx * 10;
       case 'ship': return transitDays(this, l, l.out.km, `${l.id}|ship|${l.supId}`);
       case 'clear': {
         if (!l.gateway) return 0.05;
         let d = this.adm(k, A.clear);
-        if (this.mode === 'legacy' && this.rng(`legacy|doc|${k}`).chance(A.docError)) d += this.adm(`${k}|fix`, A.docFix);
+        if (this.mode === 'legacy' && this.adminRng(`doc|${k}`).chance(A.docError)) d += this.adm(`${k}|fix`, A.docFix);
         return d;
       }
       case 'haul': return l.haul.km / 700 + this.phys(`${l.id}|haul`, [0.3, 0.6, 1.2]);
-      case 'receive': return this.adm(k, A.receive);
+      case 'receive': return this.adm(k, A.receive) + (this.mode === 'legacy' ? wait('receive') : 0);
       default: return 0;
     }
   }
@@ -350,6 +399,8 @@ export class Sim {
     for (let i = ci + (l.state === 'active' ? 1 : 0); i < l.pipe.length; i++) {
       const st = l.pipe[i];
       t += (l.extra[st] || 0);
+      if ((this.mode === 'legacy' && ['screen', 'source', 'order', 'receive'].includes(st)) || (s.conn === 'C' && ['source', 'order'].includes(st))) t += COORD_ESTIMATES[st].mean;
+      if (this.mode === 'native' && this.autonomy === 'dayone' && ['screen', 'source', 'order'].includes(st)) t += mode3(A.human) + COORD_ESTIMATES.human.mean;
       t += st === 'screen' ? mode3(A.screen) : st === 'source' ? mode3(A.source[s.conn]) : st === 'order' ? mode3(A.order[s.conn])
         : st === 'make' ? mode3(l.make || l.M.make) : st === 'build' ? 84 + l.hall.idx * 10 : st === 'ship' ? l.out.km / (l.mode === 'air' ? 9000 : l.mode === 'sea' ? 650 : 700) + (l.mode === 'air' ? 4.5 : l.mode === 'sea' ? 4 : 1)
           : st === 'clear' ? mode3(A.clear) : st === 'haul' ? l.haul.km / 700 + 0.6 : st === 'receive' ? mode3(A.receive) : 0;
@@ -361,7 +412,9 @@ export class Sim {
     const A = this.A, s = supplier(l.supId);
     return p80(A.screen) + p80(A.source[s.conn]) + p80(A.order[s.conn]) + p80(l.make || l.M.make) + (l.extra.make || 0)
       + l.out.km / (l.mode === 'air' ? 9000 : l.mode === 'sea' ? 650 : 700) + (l.mode === 'air' ? 6 : l.mode === 'sea' ? 6 : 2)
-      + p80(A.clear) + l.haul.km / 700 + 1 + p80(A.receive) + (l.leadBias || 0);
+      + p80(A.clear) + l.haul.km / 700 + 1 + p80(A.receive) + (l.leadBias || 0)
+      + (this.mode === 'legacy' ? ['screen', 'source', 'order', 'receive'].reduce((sum, task) => sum + COORD_ESTIMATES[task].p80, 0) : s.conn === 'C' ? COORD_ESTIMATES.source.p80 + COORD_ESTIMATES.order.p80 : 0)
+      + (this.mode === 'native' && this.autonomy === 'dayone' ? 3 * (p80(A.human) + COORD_ESTIMATES.human.p80) : 0);
   }
   forecastReady(hall) {
     const site = hall.site, A = this.A;
@@ -510,13 +563,17 @@ export class Sim {
     const lot = hall.lots.find(x => x.state === 'pending' && x.rack.done && x.optics.done && x.switch.done && !x.rack.quarantine);
     if (!lot) return;
     hall.crewBusy = true; lot.state = 'installing';
-    const d = this.adm(`${hall.id}|L${lot.i}|wo`, this.A.workorder) + this.adm(`${hall.id}|L${lot.i}|install`, this.A.install);
+    const d = this.adm(`${hall.id}|L${lot.i}|wo`, this.A.workorder) + this.adm(`${hall.id}|L${lot.i}|install`, this.A.install)
+      + (this.mode === 'legacy' ? this.coordination(`${hall.id}|L${lot.i}|wo`, 'workorder') : 0);
     this.log('Deployer', `Install ${hall.id} lot ${lot.i + 1}: 8 racks, optics, leaf switches (${d.toFixed(1)} d)`, { site: hall.site.id });
     this.after(d, () => {
       hall.crewBusy = false; lot.state = 'burnin';
       this._tryInstall(hall);
       const b = this.adm(`${hall.id}|L${lot.i}|burnin`, this.A.burnin) + (lot.burnExtra || 0);
-      this.after(b, () => this._accept(lot));
+      this.after(b, () => {
+        const wait = this.mode === 'legacy' ? this.coordination(`${hall.id}|L${lot.i}|accept`, 'acceptance') : 0;
+        this.after(wait, () => this._accept(lot));
+      });
     });
   }
   _accept(lot) {
@@ -572,6 +629,7 @@ export class Sim {
     const T = Math.min(at, this.horizon);
     const racks = this.racks;
     const live = racks.filter(r => r.liveAt != null && r.liveAt <= T);
+    const billable = live.filter(r => !r.hall.pauses.some(([a, b]) => T >= a && T < b));
     const first = live.length ? Math.min(...live.map(r => r.liveAt)) : null;
     const all = live.length === racks.length ? Math.max(...live.map(r => r.liveAt)) : null;
     const c2b = live.map(r => r.liveAt - r.hall.site.contractDay).sort((a, b) => a - b);
@@ -592,6 +650,7 @@ export class Sim {
     const decLat = dec.map(d => d.resolvedAt - d.t).sort((a, b) => a - b);
     return {
       t: T, gpusLive: live.length * GPUS_PER_RACK, gpusTotal: racks.length * GPUS_PER_RACK, racksLive: live.length, racksTotal: racks.length,
+      gpusBillable: billable.length * GPUS_PER_RACK, revenuePerDay: billable.length * GPUS_PER_RACK * 24 * PRICE_PER_GPU_HOUR,
       firstLive: first, allLive: all, c2bMedian: median(c2b), d2bMedian: median(d2b),
       lateRackDays: late, idleRackDays: idle, idleCostM: idle * RACK_DEPRECIATION_DAY / 1e6,
       revenueM: gpuDays * 24 * PRICE_PER_GPU_HOUR / 1e6, lateRevenueM: lostRev,

@@ -4,7 +4,8 @@
 import { mountShell, toast } from '../shell.js';
 import { currentProvider } from '../risk.js';
 import { CONCEPT } from '../data/concept.js';
-import { Sim, ASSUMPTIONS, REPORT_DAY, fmtLag } from '../sim/engine.js';
+import { Sim, ASSUMPTIONS, COORDINATION, REPORT_DAY, PRICE_PER_GPU_HOUR, fmtLag } from '../sim/engine.js';
+import { MONTE_CARLO_RUNS, runLatencyTrial, summarizeLatencyTrials } from '../sim/monte-carlo.js';
 import { SCENARIOS, scenarioByN, freshScenario } from '../sim/scenarios.js';
 import { SITES, SUPPLIERS, supplier, GPUS_PER_RACK } from '../sim/world.js';
 import { createRenderer, webglOK, RACK_STATES } from '../sim/render.js';
@@ -54,7 +55,7 @@ function linkURL(withDay = true) {
 const syncURL = () => history.replaceState(null, '', linkURL(false));
 
 // ---------- runs ----------
-let sims, proj, T = 0, playing = false;
+let sims, proj, impactProjection, monteCarlo = null, T = 0, playing = false;
 let choices = [];            // decisions you made by hand: replayed on rewind
 let seen;                    // per-run cursors for callouts / decision alerts
 let onsetFired = false;
@@ -72,6 +73,11 @@ function build() {
 function project() {
   proj = {};
   for (const mode of ['native', 'legacy']) { const s = makeSim(mode, true); s.advanceTo(HORIZON); proj[mode] = s; }
+  impactProjection = {
+    native: proj.native.kpis(HORIZON),
+    legacy: proj.legacy.kpis(HORIZON),
+    revenueGapM: proj.native.kpis(REPORT_DAY).revenueM - proj.legacy.kpis(REPORT_DAY).revenueM,
+  };
 }
 function advance(to, { quiet = false } = {}) {
   sims.native.advanceTo(to);
@@ -175,8 +181,36 @@ function renderMarks() {
 }
 
 // ---------- scoreboard ----------
+const dollars = v => `$${Math.round(v).toLocaleString('en-US')}`;
+function renderImpact(kn, kl) {
+  $('#impactContext').textContent = `S${cfg.scenario} · seed ${cfg.seed} · auto-resolved projection`;
+  for (const mode of ['native', 'legacy']) {
+    const k = impactProjection[mode];
+    $(`#${mode}DaysLive`).textContent = k.allLive == null ? `>${HORIZON} days` : `${k.allLive.toFixed(1)} days`;
+    $(`#${mode}FirstLive`).textContent = k.firstLive == null ? `First rack: not by day ${HORIZON}` : `First rack: day ${k.firstLive.toFixed(1)}`;
+  }
+  const n = impactProjection.native.allLive, l = impactProjection.legacy.allLive;
+  const gap = $('#daysLiveGap');
+  if (n != null && l != null) {
+    const days = l - n;
+    gap.textContent = Math.abs(days) < 0.05 ? 'Full capacity at the same time (to 0.1 day).' : `${Math.abs(days).toFixed(1)} days ${days > 0 ? 'earlier' : 'later'} with agents`;
+  } else if (n != null || l != null) {
+    gap.textContent = `${n == null ? 'Agent-native' : 'Legacy'} more than ${(HORIZON - (n ?? l)).toFixed(1)} days later; incomplete at day ${HORIZON}.`;
+  } else gap.textContent = `Neither model reaches full capacity by day ${HORIZON}.`;
+  const dailyGap = kn.revenuePerDay - kl.revenuePerDay;
+  $('#latencyRevenueRate').textContent = `${dollars(Math.abs(dailyGap))}/day`;
+  $('#latencyRevenueDetail').textContent = dailyGap === 0
+    ? `Day ${T.toFixed(1)}: no daily revenue gap between models.`
+    : `Day ${T.toFixed(1)}: ${dailyGap > 0 ? 'legacy' : 'agent-native'} trails by ${Math.abs(kn.gpusBillable - kl.gpusBillable).toLocaleString('en-US')} billable GPUs.`;
+  const total = impactProjection.revenueGapM;
+  $('#latencyRevenueTotal').textContent = Math.abs(total) < 0.0000005
+    ? `No projected revenue gap through day ${REPORT_DAY}.`
+    : `${dollars(Math.abs(total) * 1e6)} projected ${total > 0 ? 'legacy' : 'agent-native'} revenue shortfall through day ${REPORT_DAY} (auto-resolved).`;
+  $('#fleetDelayRate').textContent = `${dollars(TOTAL_GPUS * 24 * PRICE_PER_GPU_HOUR)}/day`;
+  $('#fleetDelayDetail').textContent = `${TOTAL_GPUS.toLocaleString('en-US')} GPUs × 24 h × $${PRICE_PER_GPU_HOUR.toFixed(2)}/GPU-hour`;
+}
 const ROWS = [
-  { k: 'GPUs billable', f: k => k.gpusLive, fmt: v => v.toLocaleString('en-US'), better: 1, hero: true },
+  { k: 'GPUs billable', f: k => k.gpusBillable, fmt: v => v.toLocaleString('en-US'), better: 1, hero: true },
   { k: 'First rack billable', f: k => k.firstLive, fmt: v => (v == null ? '—' : `day ${Math.round(v)}`), better: -1 },
   { k: 'All 128 racks billable', f: k => k.allLive, fmt: v => (v == null ? '—' : `day ${Math.round(v)}`), better: -1 },
   { k: 'Dock → billable (median)', f: k => k.d2bMedian, fmt: v => (v == null ? '—' : `${v.toFixed(0)} d`), better: -1 },
@@ -200,6 +234,7 @@ function delta(r, a, b) {
 }
 function renderScore() {
   const kn = sims.native.kpis(T), kl = sims.legacy.kpis(T);
+  renderImpact(kn, kl);
   $('#kpi').innerHTML = `<thead><tr><th>at day ${Math.floor(T)}</th><th>Native</th><th>Legacy</th><th>Δ</th></tr></thead><tbody>${ROWS.map(r => {
     const a = r.f(kn), b = r.f(kl), [dv, dc] = delta(r, a, b);
     return `<tr class="${r.hero ? 'kpi-top' : ''}"${r.tip ? ` data-tip="${esc(r.tip)}"` : ''}><td>${r.k}</td><td class="n">${r.fmt(a)}</td><td class="l">${r.fmt(b)}</td><td class="d ${dc}">${dv}</td></tr>`;
@@ -215,6 +250,12 @@ function renderChart() {
     return p;
   };
   const area = (series) => { const p = path(series, T); if (!p) return ''; const last = series.filter(s => s.d <= T).pop(); return `${p}L${x(last.d).toFixed(1)},${y(0)}L${x(0)},${y(0)}Z`; };
+  const band = mode => {
+    const series = monteCarlo?.modes[mode].series;
+    if (!series) return '';
+    return path(series.map(s => ({ d: s.d, gpus: s.p90 })))
+      + series.slice().reverse().map(s => `L${x(s.d).toFixed(1)},${y(s.p10).toFixed(1)}`).join('') + 'Z';
+  };
   const nb = SITES.flatMap(s => s.needBy);
   const at = sims.native.scenario?.at;
   const grid = [0.25, 0.5, 0.75, 1].map(f => `<line class="grid" x1="${PADL}" x2="${W}" y1="${y(TOTAL_GPUS * f)}" y2="${y(TOTAL_GPUS * f)}"/>`).join('');
@@ -224,6 +265,7 @@ function renderChart() {
     <text x="${PADL - 4}" y="${y(TOTAL_GPUS) + 3}" text-anchor="end">${(TOTAL_GPUS / 1000).toFixed(1)}k</text><text x="${PADL - 4}" y="${y(0)}" text-anchor="end">0</text>${xt}
     ${nb.map(d => `<line class="needby" x1="${x(d)}" x2="${x(d)}" y1="${PADT}" y2="${y(0)}"/>`).join('')}
     ${at != null ? `<line class="onset" x1="${x(at)}" x2="${x(at)}" y1="${PADT}" y2="${y(0)}"/>` : ''}
+    <path class="band-l" d="${band('legacy')}"/><path class="band-n" d="${band('native')}"/>
     <path class="area" d="${area(sims.native.series)}"/>
     <path class="pl" d="${path(proj.legacy.series)}"/><path class="pn" d="${path(proj.native.series)}"/>
     <path class="ll" d="${path(sims.legacy.series, T)}"/><path class="ln" d="${path(sims.native.series, T)}"/>
@@ -309,7 +351,7 @@ function renderDecisions(force = false) {
     </article>`;
   };
   const empty = cfg.watch === 'native'
-    ? `<div class="dec-empty"><b>No open exceptions.</b><br>Agents act inside their mandates; only exceptions reach a human. ${cfg.auto ? 'Auto-resolve is on: a modelled human picks the recommended option after a short delay. Turn it off to take the decisions yourself.' : 'Auto-resolve is off: when an agent escalates, the run pauses here and waits for you.'}</div>`
+    ? `<div class="dec-empty"><b>No open exceptions.</b><br>Agents act inside their mandates; only exceptions reach a human. ${cfg.auto ? 'Auto-resolve is on: a modelled human picks the recommended option after a sampled response or calendar delay, sometimes weeks. Turn it off to take the decisions yourself.' : 'Auto-resolve is off: when an agent escalates, the run pauses here and waits for you.'}</div>`
     : `<div class="dec-empty"><b>Legacy run.</b><br>Approvals are everywhere in this model, buried in email; only cross-functional escalations are shown here.</div>`;
   $('#decisions').innerHTML = (open.length ? open.map(card).join('') : empty) + (resolved.length ? `<div class="tiny muted" style="padding:6px 2px 0">Resolved</div>${resolved.map(card).join('')}` : '');
 }
@@ -479,10 +521,59 @@ $('#campusKey').innerHTML = RACK_STATES.map(([id, label], k) => `<li>${CAMPUS_KE
 
 // ---------- below the fold: assumptions, claims, sweep ----------
 $('#assumpTable').innerHTML = `<thead><tr><th>Step</th><th>Agent-native</th><th>Legacy (modelled)</th><th>Basis</th></tr></thead><tbody>${ASSUMPTIONS.map(r => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[2])}</td><td><span class="badge ${r[3] === 'modelled' ? 'l2' : r[3] === 'policy' ? 'l3' : 'l1'}">${esc(r[3])}</span></td></tr>`).join('')}</tbody>`;
+$('#coordTable').innerHTML = `<thead><tr><th>Human coordination task</th>${COORDINATION.regimes.map(r => `<th>${esc(r.label)}<br>${r.days[0]} / ${r.days[1]} / ${r.days[2]} d</th>`).join('')}</tr></thead><tbody>${Object.values(COORDINATION.tasks).map(t => `<tr><td>${esc(t.label)}</td>${t.weights.map(w => `<td>${Math.round(w * 100)}%</td>`).join('')}</tr>`).join('')}</tbody>`;
 
-let sweepJob = 0, claimTimer = null;
-function scheduleClaims() { clearTimeout(claimTimer); claimTimer = setTimeout(runSweep, 400); }
+let sweepJob = 0, monteCarloJob = 0, claimTimer = null;
+function scheduleClaims() {
+  ++sweepJob; ++monteCarloJob; monteCarlo = null;
+  $('#mcDownload').disabled = true;
+  $('#mcProgress').textContent = 'Preparing 50 paired runs…';
+  $('#mcSummary').textContent = 'Sampling human coordination delays…';
+  $('#mcResults').innerHTML = '';
+  $('#mcTaskTable').innerHTML = '';
+  clearTimeout(claimTimer);
+  claimTimer = setTimeout(() => { runSweep(); runMonteCarlo(); }, 400);
+}
 const idle = (fn) => (window.requestIdleCallback ? requestIdleCallback(fn, { timeout: 200 }) : setTimeout(fn, 16));
+function runMonteCarlo() {
+  const job = ++monteCarloJob;
+  const config = { seed: cfg.seed, scenario: cfg.scenario, policy: cfg.policy, autonomy: cfg.autonomy, horizon: HORIZON, provider: currentProvider() };
+  const trials = [];
+  const step = () => {
+    if (job !== monteCarloJob) return;
+    const t0 = performance.now();
+    while (trials.length < MONTE_CARLO_RUNS && performance.now() - t0 < 24) {
+      trials.push(runLatencyTrial({ ...config, trial: trials.length }));
+    }
+    $('#mcProgress').textContent = `${trials.length}/${MONTE_CARLO_RUNS} paired runs · S${config.scenario} · physical seed ${config.seed}`;
+    if (trials.length < MONTE_CARLO_RUNS) { idle(step); return; }
+    monteCarlo = { ...summarizeLatencyTrials(trials), config: { ...config, provider: config.provider.id }, reportDay: REPORT_DAY };
+    renderMonteCarlo();
+    dirty = 'all';
+  };
+  idle(step);
+}
+function renderMonteCarlo() {
+  const { native: n, legacy: l } = monteCarlo.modes;
+  const day = v => v == null ? `>${HORIZON} d` : `${v.toFixed(1)} d`;
+  $('#mcSummary').textContent = `50-run full-capacity P10–P90: native ${day(n.allLive.p10)}–${day(n.allLive.p90)}; legacy ${day(l.allLive.p10)}–${day(l.allLive.p90)}. Lines show this seed; bands show coordination variance.`;
+  const rows = [
+    ['First rack billable', 'firstLive', day],
+    ['All racks billable', 'allLive', day],
+    [`Revenue by day ${REPORT_DAY}`, 'revenueM', v => `$${v.toFixed(1)}M`],
+  ];
+  $('#mcResults').innerHTML = `<thead><tr><th>Outcome</th><th>Native P10</th><th>P50</th><th>P90</th><th>Legacy P10</th><th>P50</th><th>P90</th></tr></thead><tbody>${rows.map(([label, key, fmt]) => `<tr><td>${label}</td>${['native', 'legacy'].map(mode => ['p10', 'p50', 'p90'].map(p => `<td>${fmt(monteCarlo.modes[mode][key][p])}</td>`).join('')).join('')}</tr>`).join('')}</tbody>`;
+  $('#mcProgress').textContent += ` · complete by day ${HORIZON}: native ${n.completed}/50, legacy ${l.completed}/50`;
+  $('#mcTaskTable').innerHTML = `<thead><tr><th>Sampled coordination task</th><th>Model</th><th>Samples</th><th>Wait P10</th><th>P50</th><th>P90</th><th>Longest</th><th>Meeting / rescheduled</th></tr></thead><tbody>${monteCarlo.tasks.map(t => `<tr><td>${esc(t.label)}</td><td>${t.mode === 'native' && t.task !== 'human' ? 'Native · Envoy' : RUN_NAME[t.mode]}</td><td>${t.count.toLocaleString('en-US')}</td><td>${day(t.p10)}</td><td>${day(t.p50)}</td><td>${day(t.p90)}</td><td>${day(t.max)}</td><td>${(100 * t.regimes.meeting / t.count).toFixed(1)}% / ${(100 * t.regimes.rescheduled / t.count).toFixed(1)}%</td></tr>`).join('')}</tbody>`;
+  $('#mcDownload').disabled = false;
+}
+$('#mcDownload').addEventListener('click', () => {
+  if (!monteCarlo) return;
+  const url = URL.createObjectURL(new Blob([JSON.stringify({ ...monteCarlo, assumptions: ASSUMPTIONS, coordination: COORDINATION }, null, 2)], { type: 'application/json' }));
+  const a = document.createElement('a');
+  a.href = url; a.download = `coordination-s${cfg.scenario}-seed${cfg.seed}-50-runs.json`;
+  a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
 function headless(n, mode, over = {}) {
   const s = new Sim({ seed: cfg.seed, mode, scenario: freshScenario(n), autoResolve: true, policy: cfg.policy, autonomy: cfg.autonomy, provider: currentProvider(), ...over });
   s.runToEnd();
@@ -619,4 +710,4 @@ requestAnimationFrame(frame);
 if (startDay === 0 && !reduced) setTimeout(() => { if (!playing && T === 0) setPlaying(true); }, 900);
 
 // Exposed for tests and the curious: window.nso.sims.native.ledger
-window.nso = { get sims() { return sims; }, get T() { return T; }, get renderer() { return R; }, cfg, seek, setPlaying };
+window.nso = { get sims() { return sims; }, get T() { return T; }, get renderer() { return R; }, get monteCarlo() { return monteCarlo; }, cfg, seek, setPlaying };

@@ -114,7 +114,7 @@ export const SCENARIOS = [
       wire(sim, this, {
         onset: (s) => { s.setUtility(site(), 160, 'grid queue update'); s.alert({ at: S('UK1'), label: 'Grid delay', days: 30 }); },
         native: (s) => s.decide({ title: 'Interim power: 6 MW bridge generation + battery, $2.8M (permits assumed in hand)', desk: 'Power Broker', why: 'Utility slip of 42 days on Midland-1.', rec: 'approve', options: [{ id: 'approve', label: 'Approve bridge power', effect: interim }, { id: 'wait', label: 'Wait for utility' }] }),
-        legacy: (s) => s.decide({ title: 'Interim power business case', desk: 'Committee', why: 'Capex committee.', rec: 'approve', latency: s.adm('uk1committee', [10, 14, 21]), options: [{ id: 'approve', label: 'Approve', effect: interim }] }),
+        legacy: (s) => s.decide({ title: 'Interim power business case', desk: 'Committee', why: 'Capex committee.', rec: 'approve', latency: s.humanDelay('uk1committee'), options: [{ id: 'approve', label: 'Approve', effect: interim }] }),
       });
     },
   },
@@ -296,7 +296,7 @@ export const SCENARIOS = [
           for (let i = 0; i < 3; i++) s.msg('Sourcing', 'RFQ', 'EPCE', 'out', null, `electrical crews (${i + 1}/6)`);
           s.decide({ title: 'Premium labour: travelling electrical crews, +$1.1M', desk: 'Project Controller', why: 'Restores Fjord-1 schedule; above mandate.', rec: 'approve', options: [{ id: 'approve', label: 'Approve', effect: (x) => { x.cost.premium += 1.1; restore(x); } }, { id: 'no', label: 'Decline' }] });
         },
-        legacy: (s) => s.decide({ title: 'Premium labour', desk: 'Committee', why: '', rec: 'approve', latency: s.adm('no1committee', [5, 10, 14]), options: [{ id: 'approve', label: 'Approve', effect: (x) => { x.cost.premium += 1.1; restore(x); } }] }),
+        legacy: (s) => s.decide({ title: 'Premium labour', desk: 'Committee', why: '', rec: 'approve', latency: s.humanDelay('no1committee'), options: [{ id: 'approve', label: 'Approve', effect: (x) => { x.cost.premium += 1.1; restore(x); } }] }),
       });
     },
   },

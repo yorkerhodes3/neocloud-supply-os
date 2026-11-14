@@ -86,6 +86,32 @@ simulation outcomes are identical. To add a provider, copy the `generiq` entry, 
 > signals are fictional. No provider is called. The only real record is the CoLab Diplomacy Table session
 > replayed in table E, used under its licence (`docs/assets/runs/`).
 
+**Human latency is per task, not a fixed offset.** `ADMIN` holds processing durations;
+`COORDINATION` in `docs/assets/js/sim/engine.js` independently samples same-day replies,
+email follow-ups, meeting slots (up to 14 calendar days) and reschedules (up to 28),
+with different weights for quotes, acknowledgements, hand-offs, crew scheduling and
+approvals. Automated tasks skip calendar waits; human approvals and tier-C supplier
+responses do not, even in the agent-native model. These are synthetic assumptions,
+not empirical benchmarks; participant calendars, holidays and correlated congestion
+are not modelled.
+
+The trajectory includes P10–P90 bands from **50 paired coordination trials** for the
+selected scenario, policy and autonomy. `sim/monte-carlo.js` holds the physical seed
+fixed and varies `Sim.latencySeed`; normal URL replay defaults it to the world seed.
+The Monte Carlo section shows completion and task-wait percentiles and exports the
+50 trial outcomes, latency seeds, bands and assumptions as JSON. Unfinished runs stay
+in completion percentiles as right-censored results; exceptions auto-resolve in the
+ensemble regardless of manual choices in the live run.
+
+The **days-to-live and revenue-impact callout** above the simulation contrasts
+projected full-capacity days (elapsed from day 0, auto-resolved), the live daily
+revenue gap, and the projected cumulative revenue gap through day 200. Daily revenue
+is currently billable GPUs (excluding paused racks) × 24 × the illustrative
+$2.10/GPU-hour rate. Full-fleet one-day delay exposure is shown separately:
+9,216 GPUs × 24 × $2.10 = **$464,486/day**. These are gross revenue opportunities,
+not profit or guaranteed savings; disruption comparisons include response and policy
+effects as well as operating-model timing.
+
 ### Develop
 
 ```bash

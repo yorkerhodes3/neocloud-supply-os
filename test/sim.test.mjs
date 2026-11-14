@@ -2,9 +2,10 @@
 // Run: npm test
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { Sim, REPORT_DAY } from '../docs/assets/js/sim/engine.js';
+import { Sim, REPORT_DAY, PRICE_PER_GPU_HOUR } from '../docs/assets/js/sim/engine.js';
 import { SCENARIOS, freshScenario } from '../docs/assets/js/sim/scenarios.js';
-import { SITES, GPUS_PER_RACK } from '../docs/assets/js/sim/world.js';
+import { SITES, GPUS_PER_RACK, supplier } from '../docs/assets/js/sim/world.js';
+import { runLatencyTrial, summarizeLatencyTrials } from '../docs/assets/js/sim/monte-carlo.js';
 
 const HORIZON = 240;
 const run = (n, mode, opts = {}) => {
@@ -56,6 +57,32 @@ test('baseline: every rack is billable by the horizon in both modes', () => {
   }
 });
 
+test('daily revenue follows the billable ramp rather than assuming a full fleet', () => {
+  const s = baseline.native;
+  assert.equal(s.kpis(0).revenuePerDay, 0);
+  const t = s.kpis().firstLive + 0.01;
+  const k = s.kpis(t);
+  assert.ok(k.gpusBillable > 0 && k.gpusBillable < k.gpusTotal);
+  const dt = 0.00001;
+  const earnedPerDay = (s.kpis(t + dt).revenueM - k.revenueM) * 1e6 / dt;
+  assert.ok(Math.abs(k.revenuePerDay - earnedPerDay) < 0.01, 'daily run-rate must agree with accrued GPU-hour revenue');
+});
+
+test('daily revenue excludes paused racks and recovers at the end of the pause', () => {
+  const s = run(0, 'native');
+  const hall = s.halls[0];
+  const t = s.kpis().allLive + 1;
+  hall.pauses.push([t, t + 2]);
+  const full = s.kpis(t - 0.01);
+  const paused = s.kpis(t);
+  const recovered = s.kpis(t + 2);
+  const hallGpus = hall.lots.reduce((sum, lot) => sum + lot.racks.length * GPUS_PER_RACK, 0);
+  assert.equal(paused.gpusBillable, full.gpusBillable - hallGpus);
+  assert.ok(Math.abs(paused.revenuePerDay - (full.revenuePerDay - hallGpus * 24 * PRICE_PER_GPU_HOUR)) < 1e-6);
+  assert.equal(paused.gpusLive, full.gpusLive, 'a billing pause does not undo acceptance');
+  assert.equal(recovered.revenuePerDay, full.revenuePerDay);
+});
+
 test('common random numbers: both modes face the same physical world', () => {
   const n = makeDurations(baseline.native), l = makeDurations(baseline.legacy);
   assert.ok(n.size > 20, 'expected manufacturing stages to compare');
@@ -68,6 +95,78 @@ test('common random numbers: both modes face the same physical world', () => {
   assert.ok(compared > 20, `only ${compared} lines compared`);
   assert.equal(baseline.native.phys('probe', [1, 2, 3]), baseline.legacy.phys('probe', [1, 2, 3]));
   assert.notEqual(baseline.native.adm('probe', [1, 2, 3]), baseline.legacy.adm('probe', [1, 2, 3]));
+});
+
+test('human coordination varies per task instance from same-day replies to multi-week waits', () => {
+  const waits = baseline.legacy.latencies.filter(s => s.task === 'source');
+  assert.ok(waits.length > 20, 'expected independent quote / award task instances');
+  assert.ok(Math.min(...waits.map(s => s.days)) < 0.5, 'missing same-day responses');
+  assert.ok(Math.max(...waits.map(s => s.days)) > 14, 'missing two-week-plus calendar waits');
+  assert.equal(new Set(waits.map(s => s.days)).size, waits.length, 'task instances must not share a static delay');
+  const crew = baseline.legacy.latencies.filter(s => s.task === 'workorder');
+  assert.ok(Math.max(...crew.map(s => s.days)) - Math.min(...crew.map(s => s.days)) > 7, 'crew scheduling should not be a uniform offset');
+});
+
+test('changing only the latency seed resamples human timing without changing physical work', () => {
+  const a = run(0, 'legacy', { latencySeed: 123 });
+  const b = run(0, 'legacy', { latencySeed: 123 });
+  assert.equal(fingerprint(a), fingerprint(b), 'latency-seeded runs must replay exactly');
+  assert.notEqual(fingerprint(a), fingerprint(baseline.legacy), 'resampling latency should change the trajectory');
+  const before = makeDurations(baseline.legacy), after = makeDurations(a);
+  assert.ok(after.size > 20);
+  for (const [id, days] of after) {
+    if (before.has(id)) assert.ok(Math.abs(days - before.get(id)) < 1e-9, `${id}: latency seed changed manufacture duration`);
+  }
+  for (const key of ['make-probe', 'ship-probe', 'construction-probe', 'failure-probe']) {
+    assert.equal(a.phys(key, [1, 2, 3]), baseline.legacy.phys(key, [1, 2, 3]));
+  }
+});
+
+test('agents bypass automated coordination, not human suppliers or reserved approvals', () => {
+  const automated = baseline.native.lines.find(l => l.kind === 'rack' && supplier(l.supId).conn === 'A');
+  assert.ok(automated);
+  assert.equal(baseline.native.latencies.filter(s => s.key.startsWith(`${automated.id}|`) && ['source', 'order'].includes(s.task)).length, 0);
+  const envoyWaits = baseline.native.latencies.filter(s => s.task === 'source');
+  assert.ok(envoyWaits.length > 0, 'Envoy must wait on human suppliers');
+  for (const wait of envoyWaits) {
+    const line = baseline.native.lines.find(l => wait.key.startsWith(`${l.id}|`));
+    assert.equal(supplier(line.supId).conn, 'C');
+  }
+  const dayone = run(0, 'native', { autonomy: 'dayone' });
+  const approvals = dayone.latencies.filter(s => s.task === 'human');
+  assert.ok(approvals.length > 50);
+  assert.ok(approvals.some(s => s.days > 14), 'native human approvals must also experience multi-week calendar waits');
+  for (const [scenario, key] of [[5, 'uk1committee'], [15, 'no1committee']]) {
+    const s = run(scenario, 'legacy');
+    const wait = s.latencies.find(w => w.task === 'human' && w.key === key);
+    assert.ok(wait, `S${scenario}: committee approval bypassed the human calendar model`);
+    const decision = s.decisions.find(d => d.desk === 'Committee');
+    const processing = decision.resolvedAt - decision.t - wait.days;
+    assert.ok(processing >= s.A.human[0] - 1e-9 && processing <= s.A.human[2] + 1e-9);
+  }
+});
+
+test('50 fixed-world Monte Carlo trials produce reproducible trajectory variance and retain censored runs', () => {
+  const trials = Array.from({ length: 50 }, (_, trial) => runLatencyTrial({ trial }));
+  const report = summarizeLatencyTrials(trials);
+  assert.equal(report.runs, 50);
+  assert.equal(new Set(report.trials.map(t => t.latencySeed)).size, 50);
+  assert.deepEqual(runLatencyTrial({ trial: 7 }), trials[7]);
+  assert.ok(report.modes.legacy.allLive.p90 - report.modes.legacy.allLive.p10 >= 14, 'full-capacity spread should reveal at least a two-week calendar effect');
+  assert.ok(report.modes.legacy.firstLive.p90 - report.modes.legacy.firstLive.p10 >= 7);
+  for (const mode of ['native', 'legacy']) {
+    const series = report.modes[mode].series;
+    assert.equal(series.length, HORIZON + 1);
+    assert.equal(series[0].d, 0);
+    assert.equal(series.at(-1).d, HORIZON);
+    assert.ok(series.some(s => s.p90 - s.p10 >= 8 * GPUS_PER_RACK), `${mode}: expected a visible trajectory band`);
+    for (const s of series) assert.ok(0 <= s.p10 && s.p10 <= s.p50 && s.p50 <= s.p90 && s.p90 <= baseline[mode].kpis().gpusTotal);
+  }
+  const censored = trials.map((t, i) => i < 10 ? { ...t, legacy: { ...t.legacy, allLive: null } } : t);
+  const partial = summarizeLatencyTrials(censored);
+  assert.equal(partial.modes.legacy.completed, 40);
+  assert.equal(partial.modes.legacy.allLive.p90, null, 'dropping unfinished runs would incorrectly report a finite P90');
+  assert.ok(Number.isFinite(partial.modes.legacy.allLive.p50));
 });
 
 test('every scenario runs to the horizon in both modes and seeds', () => {
