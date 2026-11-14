@@ -30,6 +30,13 @@ once GitHub Pages is enabled; see [Deploying](#deploying-the-site)).
 
 ➡️ **[SPECIFICATION.md](SPECIFICATION.md)**: the v1 specification (Roadmap Phases 0–2): user stories, functional and non-functional requirements, data model, controls and open questions. Draft, pending human review.
 
+**Proposed Regulation feature:** [CONCEPT-IDEA.md](docs/features/proposed-regulation/CONCEPT-IDEA.md)
+and [SPECIFICATIONS.md](docs/features/proposed-regulation/SPECIFICATIONS.md), including
+primary-source checkpoints, unverified optics assumptions and student/Sayari evidence
+handoff. [Try the planning-only demo](docs/simulate.html#proposed-regulation): inject
+an editable future-generation scenario, compare same-seed deployment impact, and
+remove it without changing the original playbooks or production policy.
+
 ➡️ **[research/](research/)**: cited market and vendor research notes that inform the specification. First note: [Supermicro DCBBS](research/supermicro-dcbbs.md) (integrated data center building blocks), which informs the feature list in SPECIFICATION §5.17.
 
 ## The demo website (`docs/`)
@@ -41,7 +48,7 @@ reviewed concept's own tables (`npm run build:data`) instead of paraphrasing the
 | Page | What it shows |
 | --- | --- |
 | [`index.html`](docs/index.html) | The solution: 80 SCOR-aligned functions, 36 agent desks, platform, provider-neutral risk backbone, supplier engagement tiers, controls, roadmap |
-| [`simulate.html`](docs/simulate.html) | **Agentic simulation**, after the CoLab 3D evacuation sim. A deck.gl globe and campus view where an agent-native operation and a legacy one run side by side on the same seeded world through 16 disruptions, with a live scoreboard, ledger, decisions and desks. `?scenario=8&seed=42` links reproduce a run |
+| [`simulate.html`](docs/simulate.html) | **Agentic simulation**, after the CoLab 3D evacuation sim. A deck.gl globe and campus view where an agent-native operation and a legacy one run side by side on the same seeded world through 16 disruptions, with a live scoreboard, ledger, decisions and desks. **Proposed Regulation** adds an editable optics-intelligence overlay, same-seed with/without comparison, primary-source checkpoints and private student evidence input. `?scenario=8&seed=42` links reproduce a run; assumption-only overlays also travel in the URL |
 | [`negotiate.html`](docs/negotiate.html) | **Negotiation room**, after the CoLab Diplomacy Table and `diplomatic-simulator`. Four deterministic deals (A–D) run agent to agent inside a signed mandate, with a tactic detector (two prohibited tactics), private caucus channels, human escalation, utility space, ZOPA and Monte Carlo. Table E replays a real recorded CoLab session read-only |
 | [`method.html`](docs/method.html) | What is real, modelled, illustrative or fictional; engine assumptions; a live baseline check; limits; lineage |
 | [`providers.html`](docs/providers.html) | **Risk provider kit**: Sayari, Tradeverifyd, Resilinc, Exiger and the generic GenerIQ compared capability by capability, signal mapping, the naming analysis, and a white-label name for any provider |
@@ -98,6 +105,7 @@ are not modelled.
 The trajectory includes P10–P90 bands from **50 paired coordination trials** for the
 selected scenario, policy and autonomy. `sim/monte-carlo.js` holds the physical seed
 fixed and varies `Sim.latencySeed`; normal URL replay defaults it to the world seed.
+An active Proposed Regulation branch is included in those trials and chart bands.
 The Monte Carlo section shows completion and task-wait percentiles and exports the
 50 trial outcomes, latency seeds, bands and assumptions as JSON. Unfinished runs stay
 in completion percentiles as right-censored results; exceptions auto-resolve in the
@@ -111,6 +119,12 @@ $2.10/GPU-hour rate. Full-fleet one-day delay exposure is shown separately:
 9,216 GPUs × 24 × $2.10 = **$464,486/day**. These are gross revenue opportunities,
 not profit or guaranteed savings; disruption comparisons include response and policy
 effects as well as operating-model timing.
+
+**Regulation demo limits:** the reported 3.2T phase-in and 65% US BOM-value exemption
+are unverified assumptions, not operative law. Official sources are linked with
+research limitations in the feature specification. Student findings stay in browser
+memory, are never sent to a provider or saved, and disable run-link sharing and
+Monte Carlo export while applied.
 
 ### Develop
 

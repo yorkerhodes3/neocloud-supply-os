@@ -2,14 +2,15 @@
 import { Sim, REPORT_DAY, COORDINATION } from './engine.js';
 import { freshScenario } from './scenarios.js';
 import { hashSeed } from '../lib/rng.js';
+import { withRegulation } from './regulation.js';
 
 export const MONTE_CARLO_RUNS = 50;
 
-export function runLatencyTrial({ seed = 42, scenario = 0, policy = 'jit', autonomy = 'earned', horizon = 240, provider, trial = 0 } = {}) {
+export function runLatencyTrial({ seed = 42, scenario = 0, policy = 'jit', autonomy = 'earned', horizon = 240, provider, trial = 0, regulation = null, analysis = null } = {}) {
   const latencySeed = trial === 0 ? seed : hashSeed(`${seed}|latency-trial|${trial}`);
   const result = { trial, latencySeed };
   for (const mode of ['native', 'legacy']) {
-    const s = new Sim({ seed, latencySeed, mode, scenario: freshScenario(scenario), policy, autonomy, horizon, provider, autoResolve: true });
+    const s = new Sim({ seed, latencySeed, mode, scenario: withRegulation(freshScenario(scenario), regulation, analysis), policy, autonomy, horizon, provider, autoResolve: true });
     s.advanceTo(horizon);
     const k = s.kpis(horizon);
     result[mode] = { firstLive: k.firstLive, allLive: k.allLive, revenueM: s.kpis(REPORT_DAY).revenueM, series: s.series, latencies: s.latencies };

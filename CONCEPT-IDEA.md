@@ -19,6 +19,9 @@
 
 ### How to read this document
 
+- **Feature extension (draft):** [Proposed Regulation simulation](docs/features/proposed-regulation/CONCEPT-IDEA.md)
+  turns regulatory intelligence into an isolated, evidence-carrying deployment branch;
+  [feature specifications and primary-source register](docs/features/proposed-regulation/SPECIFICATIONS.md).
 - **Sections 1–10** are the concept, in the CoLab template. Read these to decide whether
   the idea deserves a specification.
 - **Appendices A–M** are detailed design material: capability map, agent roster,
@@ -1350,6 +1353,14 @@ are applied where policy says so, then the compliance officer receives one brief
 impact and the proposed actions.
 **Humans:** the compliance officer interprets the rule; legal for ambiguity.
 
+**Before a rule is final:** the [Proposed Regulation feature concept](docs/features/proposed-regulation/CONCEPT-IDEA.md)
+adds an intelligence-to-scenario path. Reports and proposed terms remain assumptions
+in an isolated planning branch, not live policy or automatic compliance holds. Students
+can supply sanitized Sayari/part evidence after analysis. The
+[feature specification](docs/features/proposed-regulation/SPECIFICATIONS.md) separates
+primary sources from unverified optics terms and connects exposure to network,
+power, cooling, qualification and deployment design reviews.
+
 ---
 
 ## Appendix H — Human operating model
@@ -1537,6 +1548,12 @@ Each scenario gets a **pre-approved playbook**: the protective actions the platf
 take automatically under mandate, and the decisions reserved for humans. The Simulator
 runs each scenario quarterly against the current graph. Signals and playbooks below are
 starting points (proposed).
+
+The [Proposed Regulation demo](docs/simulate.html#proposed-regulation) layers new
+intelligence over any playbook without changing this 16-scenario library. Its
+[feature concept](docs/features/proposed-regulation/CONCEPT-IDEA.md) and
+[specifications](docs/features/proposed-regulation/SPECIFICATIONS.md) are draft
+extensions; no proposed rule is promoted into production policy.
 
 | # | Scenario | Early signals | Automatic, under mandate | Human decision |
 | --- | --- | --- | --- | --- |

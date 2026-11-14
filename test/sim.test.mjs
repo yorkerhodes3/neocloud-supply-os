@@ -6,6 +6,10 @@ import { Sim, REPORT_DAY, PRICE_PER_GPU_HOUR } from '../docs/assets/js/sim/engin
 import { SCENARIOS, freshScenario } from '../docs/assets/js/sim/scenarios.js';
 import { SITES, GPUS_PER_RACK, supplier } from '../docs/assets/js/sim/world.js';
 import { runLatencyTrial, summarizeLatencyTrials } from '../docs/assets/js/sim/monte-carlo.js';
+import {
+  REGULATION_DEFAULTS, STUDENT_TEMPLATE, validateRegulation, validateStudentAnalysis,
+  assessOptics, opticsFinding, regulationExposure, withRegulation,
+} from '../docs/assets/js/sim/regulation.js';
 
 const HORIZON = 240;
 const run = (n, mode, opts = {}) => {
@@ -233,4 +237,195 @@ test('manual decisions replay identically after a rewind', () => {
   b.at(choice.t, () => b.resolve(choice.id, choice.opt, 'you'));
   b.advanceTo(30);
   assert.equal(fingerprint(b), fingerprint(a));
+});
+
+const regulationRun = (mode = 'native', config = REGULATION_DEFAULTS, analysis = null, n = 0) => {
+  const s = new Sim({ seed: 42, mode, scenario: withRegulation(freshScenario(n), config, analysis), autoResolve: true });
+  s.advanceTo(HORIZON);
+  return s;
+};
+
+test('coordination trials retain the proposed-regulation branch and local evidence assumptions', () => {
+  const regulation = { ...REGULATION_DEFAULTS, qualificationDays: 90 };
+  const trial = runLatencyTrial({ trial: 3, regulation });
+  const without = runLatencyTrial({ trial: 3 });
+  assert.notEqual(trial.native.allLive, without.native.allLive, 'coordination bands must not silently omit the overlay');
+  for (const mode of ['native', 'legacy']) {
+    const sim = new Sim({
+      seed: 42, latencySeed: trial.latencySeed, mode,
+      scenario: withRegulation(freshScenario(0), regulation),
+    });
+    sim.advanceTo(HORIZON);
+    assert.equal(trial[mode].allLive, sim.kpis(HORIZON).allLive);
+    assert.equal(trial[mode].revenueM, sim.kpis(REPORT_DAY).revenueM);
+    assert.deepEqual(trial[mode].series, sim.series);
+  }
+  const analysis = validateStudentAnalysis({
+    ...STUDENT_TEMPLATE, parts: [{ ...STUDENT_TEMPLATE.parts[0], authorization: 'existing' }],
+  });
+  assert.deepEqual(runLatencyTrial({ trial: 3, regulation, analysis }), without, 'an authorized-model finding should remove proposal exposure from the ensemble');
+});
+
+test('proposed regulation is an isolated deterministic overlay, not a changed baseline', () => {
+  assert.equal(withRegulation(null, null), null);
+  const unmodified = new Sim({ seed: 42, mode: 'native', scenario: withRegulation(freshScenario(0), null) });
+  unmodified.advanceTo(HORIZON);
+  assert.equal(fingerprint(unmodified), fingerprint(baseline.native));
+  for (const mode of ['native', 'legacy']) {
+    const s = regulationRun(mode);
+    assert.equal(fingerprint(s), fingerprint(regulationRun(mode)));
+    assert.ok(s.ledger.some(e => e.text.includes('ProposedRegulationInjected') && e.text.includes('SIMULATION ONLY')));
+    assert.ok(s.cost.premium > baseline[mode].cost.premium);
+    assert.equal(s.exposure, 0, 'a proposal is not a sanctions designation');
+    assert.equal(s.decisions.filter(d => d.status === 'open').length, 0);
+  }
+});
+
+test('optics scope follows generation, authorization and manufacturing evidence, not distributor country', () => {
+  const config = validateRegulation(REGULATION_DEFAULTS);
+  const p = opticsFinding(config, 'TX1');
+  assert.equal(assessOptics(config, p).status, 'affected');
+  assert.equal(assessOptics(config, { ...p, siteId: 'NO1' }).status, 'out-of-scope');
+  assert.equal(assessOptics(config, { ...p, generation: '800G' }).status, 'out-of-scope');
+  assert.equal(assessOptics(config, { ...p, authorization: 'existing' }).status, 'exempt');
+  assert.equal(assessOptics(config, { ...p, originCountry: 'US' }).status, 'out-of-scope');
+  assert.equal(assessOptics(config, { ...p, originCountry: 'unknown' }).status, 'unknown');
+  assert.equal(assessOptics(config, { ...p, authorization: 'unknown' }).status, 'unknown');
+  assert.equal(assessOptics(config, { ...p, usBomPct: null }).status, 'unknown');
+  assert.equal(assessOptics({ ...config, exemptionPct: null }, { ...p, usBomPct: null }).status, 'affected');
+  assert.equal(assessOptics(config, { ...p, usBomPct: 64.9 }).status, 'affected');
+  assert.equal(assessOptics(config, { ...p, usBomPct: 65 }).status, 'exempt');
+  assert.equal(assessOptics(config, { ...p, usBomPct: 100 }).status, 'exempt');
+  const exposure = regulationExposure(baseline.native, config);
+  assert.equal(exposure.counts.affected, 8);
+  assert.equal(exposure.counts['out-of-scope'], 8);
+  assert.equal(exposure.gpus, 4608);
+  assert.ok(Math.abs(exposure.valueM - 8.8) < 1e-9);
+});
+
+test('an earlier-generation or authorized-model finding does not delay or reprice the baseline', () => {
+  const cases = [
+    { config: { ...REGULATION_DEFAULTS, generation: '800G' }, analysis: null },
+    { config: REGULATION_DEFAULTS, analysis: validateStudentAnalysis({
+      ...STUDENT_TEMPLATE, parts: [{ ...STUDENT_TEMPLATE.parts[0], authorization: 'existing' }],
+    }) },
+    { config: REGULATION_DEFAULTS, analysis: validateStudentAnalysis({
+      ...STUDENT_TEMPLATE, parts: [{ ...STUDENT_TEMPLATE.parts[0], usBomPct: 65 }],
+    }) },
+  ];
+  for (const { config, analysis } of cases) for (const mode of ['native', 'legacy']) {
+    const s = regulationRun(mode, config, analysis);
+    assert.equal(s.kpis(HORIZON).allLive, baseline[mode].kpis(HORIZON).allLive);
+    assert.equal(s.cost.premium, baseline[mode].cost.premium);
+    assert.ok(!s.decisions.some(d => d.desk === 'Resilience'));
+    assert.equal(baseline[mode].lines.find(l => l.kind === 'optics').M.unit, '1,152 × 800G transceivers');
+  }
+});
+
+test('student findings retain evidence; a partial import exposes unknown sites instead of using fixtures', () => {
+  const analysis = validateStudentAnalysis(STUDENT_TEMPLATE);
+  assert.deepEqual(analysis, STUDENT_TEMPLATE);
+  const config = { ...REGULATION_DEFAULTS, scope: 'all', status: 'hypothetical' };
+  const exposure = regulationExposure(baseline.native, config, analysis);
+  assert.equal(exposure.counts.affected, 8);
+  assert.equal(exposure.counts.unknown, 8);
+  assert.equal(exposure.gpus, 9216);
+  assert.equal(opticsFinding(config, 'NO1', analysis).manufacturer, 'Unknown');
+  assert.equal(analysis.parts[0].provider, 'sayari');
+  assert.equal(analysis.parts[0].relationship, STUDENT_TEMPLATE.parts[0].relationship);
+});
+
+test('invalid rule and student input is explicitly rejected', () => {
+  for (const bad of [
+    { effectiveDay: 19 }, { exemptionPct: 101 }, { qualificationDays: 0 },
+    { status: 'enacted' }, { generation: '6.4T' }, { startDate: '2028-02-30' },
+    { scope: 'all' }, { signalDay: NaN }, { version: 2 },
+  ]) assert.throws(() => validateRegulation({ ...REGULATION_DEFAULTS, ...bad }));
+  for (const changes of [
+    { sourceUrl: 'javascript:alert(1)' }, { sourceUrl: 'https://user:secret@example.com' },
+    { usBomPct: '65' }, { authorization: 'clear' }, { entityId: '' }, { siteId: 'UNKNOWN' },
+  ]) assert.throws(() => validateStudentAnalysis({
+    ...STUDENT_TEMPLATE, parts: [{ ...STUDENT_TEMPLATE.parts[0], ...changes }],
+  }));
+  assert.throws(() => validateStudentAnalysis({ ...STUDENT_TEMPLATE, parts: [...STUDENT_TEMPLATE.parts, ...STUDENT_TEMPLATE.parts] }), /Duplicate/);
+  assert.throws(() => validateStudentAnalysis({ ...STUDENT_TEMPLATE, asOf: '2026-02-30' }), /as-of/);
+});
+
+test('waiting enforces only the assumed new-model shipment boundary, while redesign restores delivery', () => {
+  const s = new Sim({ seed: 42, mode: 'native', scenario: withRegulation(freshScenario(0), REGULATION_DEFAULTS), autoResolve: true });
+  s.advanceTo(20.11);
+  const decision = s.decisions.find(d => d.desk === 'Resilience');
+  assert.ok(decision && decision.status === 'open');
+  assert.ok(s.resolve(decision.id, 'wait', 'you'));
+  s.advanceTo(HORIZON);
+  const gate = s.gates.find(g => g.id === 'PROPOSED-REGULATION');
+  assert.ok(gate.active && gate.parked.length > 0);
+  for (const line of gate.parked) {
+    assert.equal(line.site.id, 'TX1');
+    assert.equal(line.stage, 'ship');
+    assert.ok(line.t0 >= REGULATION_DEFAULTS.effectiveDay);
+  }
+  assert.ok(s.kpis(HORIZON).gpusLive < baseline.native.kpis(HORIZON).gpusLive);
+  assert.equal(regulationRun().kpis(HORIZON).gpusLive, 9216);
+});
+
+test('late mitigation releases optics already parked at the proposal gate', () => {
+  const config = { ...REGULATION_DEFAULTS, signalDay: 0, effectiveDay: 0 };
+  const base = { setup(s) {
+    for (const l of s.lines.filter(l => l.kind === 'optics' && l.site.id === 'TX1')) l.pipe = ['ship', 'stock'];
+  } };
+  const s = new Sim({ seed: 42, scenario: withRegulation(base, config), autoResolve: true });
+  s.advanceTo(0.11);
+  assert.equal(s.gates.find(g => g.id === 'PROPOSED-REGULATION').parked.length, 8);
+  s.advanceTo(100);
+  const gate = s.gates.find(g => g.id === 'PROPOSED-REGULATION');
+  assert.equal(gate.active, false);
+  assert.equal(gate.parked.length, 0);
+  assert.ok(s.lines.filter(l => l.kind === 'optics' && l.site.id === 'TX1').every(l => l.stockAt !== null));
+});
+
+test('regulation qualification never clears unrelated holds or gates', () => {
+  let held;
+  const base = { setup(s) {
+    held = s.lines.find(l => l.kind === 'optics' && l.site.id === 'TX1');
+    s.hold(held, 'OTHER-DECISION');
+    s.gate({ id: 'OTHER-GATE', stage: 'order', label: 'unrelated review', match: l => l.kind === 'optics' && l.site.id === 'TX1' && l !== held });
+  } };
+  const s = new Sim({ seed: 42, scenario: withRegulation(base, REGULATION_DEFAULTS), autoResolve: true });
+  s.advanceTo(HORIZON);
+  assert.ok(held.holds.has('OTHER-DECISION'));
+  assert.ok(!held.holds.has('REGULATION-QUALIFICATION'));
+  const gate = s.gates.find(g => g.id === 'OTHER-GATE');
+  assert.ok(gate.active && gate.parked.length > 0);
+  assert.ok(!s.gates.find(g => g.id === 'PROPOSED-REGULATION').active);
+});
+
+test('proposed regulation composes with every original playbook in both modes', () => {
+  for (const sc of SCENARIOS) for (const mode of ['native', 'legacy']) {
+    const s = regulationRun(mode, REGULATION_DEFAULTS, null, sc.n);
+    assert.equal(s.t, HORIZON);
+    assert.equal(s.racks.length, 128);
+    assert.equal(s.decisions.filter(d => d.status === 'open').length, 0, `S${sc.n} ${mode}`);
+    assert.ok(s.ledger.some(e => e.text.includes('ProposedRegulationInjected')), `S${sc.n} ${mode}`);
+  }
+});
+
+test('manual proposal choice replays identically and already dispatched optics are not recalled', () => {
+  const config = { ...REGULATION_DEFAULTS, signalDay: 90, effectiveDay: 100 };
+  const make = () => new Sim({ seed: 42, mode: 'legacy', scenario: withRegulation(freshScenario(0), config), autoResolve: true });
+  const s = make();
+  s.advanceTo(100);
+  assert.ok(s.lines.filter(l => l.kind === 'optics' && l.site.id === 'TX1').every(l => l.stockAt !== null));
+  s.advanceTo(HORIZON);
+  assert.equal(s.kpis(HORIZON).allLive, baseline.legacy.kpis(HORIZON).allLive);
+  const mk = () => new Sim({ seed: 42, scenario: withRegulation(freshScenario(0), REGULATION_DEFAULTS), autoResolve: true });
+  const a = mk();
+  a.advanceTo(20.11);
+  const d = a.decisions.find(d => d.desk === 'Resilience');
+  a.resolve(d.id, 'wait', 'you');
+  a.advanceTo(HORIZON);
+  const b = mk();
+  b.at(20.11, () => b.resolve(d.id, 'wait', 'you'));
+  b.advanceTo(HORIZON);
+  assert.equal(fingerprint(a), fingerprint(b));
 });

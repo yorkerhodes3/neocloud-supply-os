@@ -9,6 +9,8 @@ import { MONTE_CARLO_RUNS, runLatencyTrial, summarizeLatencyTrials } from '../si
 import { SCENARIOS, scenarioByN, freshScenario } from '../sim/scenarios.js';
 import { SITES, SUPPLIERS, supplier, GPUS_PER_RACK } from '../sim/world.js';
 import { createRenderer, webglOK, RACK_STATES } from '../sim/render.js';
+import { validateRegulation, withRegulation, planningDate } from '../sim/regulation.js';
+import { mountRegulationPanel } from './regulation-panel.js';
 
 mountShell('simulate');
 
@@ -25,6 +27,18 @@ const RUN_NAME = { native: 'Agent-native', legacy: 'Legacy' };
 
 // ---------- configuration (URL is the source of truth) ----------
 const Q = new URLSearchParams(location.search);
+let regulationAnalysis = null, regulationError = '';
+function regulationFromURL() {
+  const value = Q.get('regulation');
+  if (value === null) return null;
+  try {
+    if (value.length > 3000) throw new Error('Regulation URL exceeds 3,000 characters.');
+    return validateRegulation(JSON.parse(value));
+  } catch (err) {
+    regulationError = `Regulation injection rejected; original scenario loaded: ${err.message}`;
+    return null;
+  }
+}
 const cfg = {
   scenario: int(Q.get('scenario'), 0, 16, 0),
   seed: int(Q.get('seed'), 1, 99999, 42),
@@ -35,6 +49,7 @@ const cfg = {
   speed: num(Q.get('speed'), 0.25, 12, 3),
   view: Q.get('view') === 'campus' ? 'campus' : 'globe',
   site: SITES.some(s => s.id === Q.get('site')) ? Q.get('site') : 'TX1',
+  regulation: regulationFromURL(),
 };
 const startDay = num(Q.get('t'), 0, HORIZON, 0);
 const show = { lanes: true, ships: true, msgs: true, sups: true, risk: true };
@@ -48,6 +63,8 @@ function linkURL(withDay = true) {
   set('policy', cfg.policy, 'jit'); set('autonomy', cfg.autonomy, 'earned'); set('watch', cfg.watch, 'native');
   set('auto', cfg.auto ? '1' : '0', '1'); set('speed', String(cfg.speed), '3');
   set('view', cfg.view, 'globe'); set('site', cfg.site, 'TX1');
+  if (cfg.regulation && !regulationAnalysis) p.set('regulation', JSON.stringify(cfg.regulation));
+  else p.delete('regulation');
   if (withDay && T > 0.5) p.set('t', String(Math.round(T))); else p.delete('t');
   u.hash = '';
   return u;
@@ -61,7 +78,7 @@ let seen;                    // per-run cursors for callouts / decision alerts
 let onsetFired = false;
 
 function makeSim(mode, autoResolve) {
-  return new Sim({ seed: cfg.seed, mode, scenario: freshScenario(cfg.scenario), autoResolve, policy: cfg.policy, autonomy: cfg.autonomy, provider: currentProvider() });
+  return new Sim({ seed: cfg.seed, mode, scenario: withRegulation(freshScenario(cfg.scenario), cfg.regulation, regulationAnalysis), autoResolve, policy: cfg.policy, autonomy: cfg.autonomy, provider: currentProvider() });
 }
 function build() {
   sims = { native: makeSim('native', cfg.auto), legacy: makeSim('legacy', true) };
@@ -112,6 +129,7 @@ function restart({ keepChoices = false, keepDay = false } = {}) {
   dirty = 'all';
   syncURL();
   scheduleClaims();
+  regulationPanel.render();
 }
 
 window.addEventListener('providerchange', () => { if (sims) restart({ keepChoices: true, keepDay: true }); });
@@ -172,6 +190,11 @@ function renderMarks() {
   const sc = scenarioByN(cfg.scenario);
   const pct = (t) => `${(t / HORIZON) * 100}%`;
   const marks = [];
+  if (cfg.regulation) {
+    const r = cfg.regulation;
+    marks.push(`<span class="m onset" style="left:${pct(r.signalDay)}" title="Proposed regulation intelligence: ${planningDate(r, r.signalDay)}"></span>`);
+    marks.push(`<span class="m needby" style="left:${pct(r.effectiveDay)}" title="Assumed enforcement, not enacted law: ${planningDate(r, r.effectiveDay)}"></span>`);
+  }
   for (const s of SITES) for (const nb of s.needBy) marks.push(`<span class="m needby" style="left:${pct(nb)}" title="${s.name} need-by day ${nb}"></span>`);
   for (const s of sims.native.sites) marks.push(`<span class="m power" style="left:${pct(s.utilityAt)}" title="${s.name} utility energisation day ${Math.round(s.utilityAt)}"></span>`);
   const at = sims.native.scenario?.at ?? proj.native.scenario?.at;
@@ -283,6 +306,7 @@ function renderBrief() {
     <h3><span class="n">S${sc.n}</span>${esc(sc.title)}</h3>
     <div class="meta">${at != null ? `<span class="badge risk">onset day ${Math.round(at)}</span>` : '<span class="badge ok">no disruption</span>'}${focusName ? `<span class="badge">${esc(focusName)}</span>` : ''}<span class="badge">seed ${cfg.seed}</span></div>
     <p>${esc(sc.model)}</p>
+    ${cfg.regulation ? `<p class="notice"><b>Proposed Regulation overlay (simulation only).</b> ${esc(cfg.regulation.title)}; future ${esc(cfg.regulation.generation)} planning branch. <a class="inline" href="#proposed-regulation">Exposure, assumptions and sources</a>${regulationAnalysis ? '. Private student findings applied; sharing disabled.' : ''}</p>` : ''}
     ${c ? `<dl><div><dt>Signals the agents watch</dt><dd>${esc(c.signals)}</dd></div><div><dt>Agents do, inside mandate</dt><dd>${esc(c.auto)}</dd></div><div><dt>Humans decide</dt><dd>${esc(c.human)}</dd></div></dl>` : ''}
     ${sc.n ? `<div class="det"><span>Detection</span><span></span>
       <span class="n">Agent-native</span><b>${dn ? fmtLag(dn.lag) + (dn.lag < 0 ? ' (forecast)' : '') : '—'}</b>
@@ -537,15 +561,16 @@ function scheduleClaims() {
 const idle = (fn) => (window.requestIdleCallback ? requestIdleCallback(fn, { timeout: 200 }) : setTimeout(fn, 16));
 function runMonteCarlo() {
   const job = ++monteCarloJob;
-  const config = { seed: cfg.seed, scenario: cfg.scenario, policy: cfg.policy, autonomy: cfg.autonomy, horizon: HORIZON, provider: currentProvider() };
+  const config = { seed: cfg.seed, scenario: cfg.scenario, policy: cfg.policy, autonomy: cfg.autonomy, horizon: HORIZON, provider: currentProvider(), regulation: cfg.regulation };
+  const analysis = regulationAnalysis;
   const trials = [];
   const step = () => {
     if (job !== monteCarloJob) return;
     const t0 = performance.now();
     while (trials.length < MONTE_CARLO_RUNS && performance.now() - t0 < 24) {
-      trials.push(runLatencyTrial({ ...config, trial: trials.length }));
+      trials.push(runLatencyTrial({ ...config, analysis, trial: trials.length }));
     }
-    $('#mcProgress').textContent = `${trials.length}/${MONTE_CARLO_RUNS} paired runs · S${config.scenario} · physical seed ${config.seed}`;
+    $('#mcProgress').textContent = `${trials.length}/${MONTE_CARLO_RUNS} paired runs · S${config.scenario}${config.regulation ? ' + proposed regulation' : ''} · physical seed ${config.seed}`;
     if (trials.length < MONTE_CARLO_RUNS) { idle(step); return; }
     monteCarlo = { ...summarizeLatencyTrials(trials), config: { ...config, provider: config.provider.id }, reportDay: REPORT_DAY };
     renderMonteCarlo();
@@ -556,7 +581,7 @@ function runMonteCarlo() {
 function renderMonteCarlo() {
   const { native: n, legacy: l } = monteCarlo.modes;
   const day = v => v == null ? `>${HORIZON} d` : `${v.toFixed(1)} d`;
-  $('#mcSummary').textContent = `50-run full-capacity P10–P90: native ${day(n.allLive.p10)}–${day(n.allLive.p90)}; legacy ${day(l.allLive.p10)}–${day(l.allLive.p90)}. Lines show this seed; bands show coordination variance.`;
+  $('#mcSummary').textContent = `50-run full-capacity P10–P90: native ${day(n.allLive.p10)}–${day(n.allLive.p90)}; legacy ${day(l.allLive.p10)}–${day(l.allLive.p90)}. Lines show this seed; bands show coordination variance${cfg.regulation ? ' including the proposed-regulation branch' : ''}.${regulationAnalysis ? ' Private student findings applied; export disabled.' : ''}`;
   const rows = [
     ['First rack billable', 'firstLive', day],
     ['All racks billable', 'allLive', day],
@@ -565,10 +590,10 @@ function renderMonteCarlo() {
   $('#mcResults').innerHTML = `<thead><tr><th>Outcome</th><th>Native P10</th><th>P50</th><th>P90</th><th>Legacy P10</th><th>P50</th><th>P90</th></tr></thead><tbody>${rows.map(([label, key, fmt]) => `<tr><td>${label}</td>${['native', 'legacy'].map(mode => ['p10', 'p50', 'p90'].map(p => `<td>${fmt(monteCarlo.modes[mode][key][p])}</td>`).join('')).join('')}</tr>`).join('')}</tbody>`;
   $('#mcProgress').textContent += ` · complete by day ${HORIZON}: native ${n.completed}/50, legacy ${l.completed}/50`;
   $('#mcTaskTable').innerHTML = `<thead><tr><th>Sampled coordination task</th><th>Model</th><th>Samples</th><th>Wait P10</th><th>P50</th><th>P90</th><th>Longest</th><th>Meeting / rescheduled</th></tr></thead><tbody>${monteCarlo.tasks.map(t => `<tr><td>${esc(t.label)}</td><td>${t.mode === 'native' && t.task !== 'human' ? 'Native · Envoy' : RUN_NAME[t.mode]}</td><td>${t.count.toLocaleString('en-US')}</td><td>${day(t.p10)}</td><td>${day(t.p50)}</td><td>${day(t.p90)}</td><td>${day(t.max)}</td><td>${(100 * t.regimes.meeting / t.count).toFixed(1)}% / ${(100 * t.regimes.rescheduled / t.count).toFixed(1)}%</td></tr>`).join('')}</tbody>`;
-  $('#mcDownload').disabled = false;
+  $('#mcDownload').disabled = !!regulationAnalysis;
 }
 $('#mcDownload').addEventListener('click', () => {
-  if (!monteCarlo) return;
+  if (!monteCarlo || regulationAnalysis) return;
   const url = URL.createObjectURL(new Blob([JSON.stringify({ ...monteCarlo, assumptions: ASSUMPTIONS, coordination: COORDINATION }, null, 2)], { type: 'application/json' }));
   const a = document.createElement('a');
   a.href = url; a.download = `coordination-s${cfg.scenario}-seed${cfg.seed}-50-runs.json`;
@@ -638,9 +663,12 @@ function claims(rows, job) {
     const k1 = d1.kpis(REPORT_DAY), ke = cfg.autonomy === 'earned' ? base.n.k : headless(0, 'native', { autonomy: 'earned' }).kpis(REPORT_DAY);
     const touchX = k1.humanTouches / Math.max(1, ke.humanTouches);
     out.push({ ok: k1.approvals > 0 && touchX >= 10 && Math.abs(inf(k1.firstLive) - inf(ke.firstLive)) <= 2, title: 'Approving every step multiplies human work without buying schedule: autonomy is earned to free people, and slack hides the cost until float runs out (baseline)', detail: `${k1.approvals} approvals · human touches ${k1.humanTouches} vs ${ke.humanTouches} (${Math.round(touchX)}×) · first billable day ${Math.round(inf(k1.firstLive))} vs ${Math.round(inf(ke.firstLive))}` });
-    const a = headless(cfg.scenario, 'native'), b = headless(cfg.scenario, 'native');
+    const overlay = { scenario: withRegulation(freshScenario(cfg.scenario), cfg.regulation, regulationAnalysis) };
+    const a = headless(cfg.scenario, 'native', overlay), b = headless(cfg.scenario, 'native', {
+      scenario: withRegulation(freshScenario(cfg.scenario), cfg.regulation, regulationAnalysis),
+    });
     const h = (s) => s.ledger.map(e => `${e.t.toFixed(6)}${e.text}`).join('\n');
-    out.push({ ok: h(a) === h(b) && a.ledger.length > 0, title: 'Same seed, same run: the simulation is deterministic, so a link reproduces it exactly', detail: `${a.ledger.length.toLocaleString('en-US')} ledger entries matched for S${cfg.scenario}, seed ${cfg.seed}` });
+    out.push({ ok: h(a) === h(b) && a.ledger.length > 0, title: regulationAnalysis ? 'Same seed and local findings: the private branch is deterministic (not shareable by link)' : 'Same seed, same run: the simulation is deterministic, so a link reproduces it exactly', detail: `${a.ledger.length.toLocaleString('en-US')} ledger entries matched for S${cfg.scenario}${cfg.regulation ? ' + proposed regulation' : ''}, seed ${cfg.seed}` });
     $('#claimList').innerHTML = out.map(c => `<li><div class="c-text"><b>${esc(c.title)}</b><span>${esc(c.detail)}</span></div><span class="verdict ${c.ok ? 'hold' : 'fail'}">${c.ok ? '✓ holds' : '✗ fails'}</span></li>`).join('');
   });
 }
@@ -648,8 +676,20 @@ function median(a) { const s = a.filter(Number.isFinite).sort((x, y) => x - y); 
 
 // ---------- boot ----------
 let R = null, dirty = 'all';
+const regulationPanel = mountRegulationPanel({
+  initialError: regulationError,
+  getState: () => ({ config: cfg.regulation, analysis: regulationAnalysis, cfg, projections: proj, provider: currentProvider() }),
+  apply: (config, analysis) => {
+    cfg.regulation = config;
+    regulationAnalysis = analysis;
+    setPlaying(false);
+    ledgerSig = ''; decSig = '';
+    restart();
+  },
+});
 build(); project();
 renderSiteSeg(); renderBrief(); renderMarks(); onWatch(); renderLegend();
+regulationPanel.render();
 if (startDay > 0) advance(startDay, { quiet: true });
 
 async function boot3D() {

@@ -68,6 +68,7 @@
       <div class="panel-head"><h4>Scenario</h4><span class="spacer"></span><span class="badge" id="watchBadge">Watching · Agent-native</span></div>
       <div class="panel-body">
         <label class="field">Disruption to inject<select id="scenario"></select></label>
+        <a class="inline tiny" href="#proposed-regulation">Inject proposed regulation intelligence</a>
         <div class="brief" id="brief"></div>
       </div>
     </div>
@@ -145,6 +146,72 @@
     <label class="field speed"><span>Speed <output id="speedOut">3 d/s</output></span><input type="range" id="speed" min="0.25" max="12" step="0.25" value="3" aria-label="Days per second"></label>
     <button class="btn icon" id="orbitBtn" aria-pressed="true" aria-label="Orbit camera" title="Orbit camera (O)">⟳</button>
     <button class="btn icon" id="homeBtn" aria-label="Reset camera" title="Reset camera (H)">⌂</button>
+  </div>
+</section>
+
+<!-- ============ PROPOSED REGULATION ============ -->
+<section class="band" id="proposed-regulation" aria-labelledby="regulation-title">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow">Intelligence to scenario</span>
+      <h2 id="regulation-title" class="fluid-h2">Proposed Regulation</h2>
+      <p class="lede">What if the next optics generation cannot be authorized? Inject a planning-only branch into the selected disruption, compare it with the same seeded world without the proposal, and attach student part-level findings later. Nothing changes production policy.</p>
+    </div>
+    <div class="notice regulation-notice"><b>Reported, not enacted.</b> No primary source was located for the exact 3.2T phase-in, 2028-2029 ramp or 65% US BOM-value exemption. These are editable assumptions, not legal findings. The default models a future 3.2T deployment; the original demo's 800G inventory is unchanged.</div>
+    <p class="tiny"><a class="inline" href="features/proposed-regulation/CONCEPT-IDEA.md">Feature concept</a> · <a class="inline" href="features/proposed-regulation/SPECIFICATIONS.md">Feature specifications and source register</a></p>
+    <div class="grid g2 regulation-grid">
+      <article class="card">
+        <h3 class="fluid-h3">Inject an assumption</h3>
+        <form id="regulationForm" class="regulation-form">
+          <label class="field">Intelligence title<input id="regTitle" maxlength="120" required></label>
+          <div class="grid g2">
+            <label class="field">Intelligence status<select id="regStatus"><option value="reported">Reported / unverified terms</option><option value="proposed">Published proposal (still not law)</option><option value="hypothetical">Hypothetical sensitivity case</option></select></label>
+            <label class="field">Planning window starts<input id="regStart" type="date" required></label>
+            <label class="field">Signal arrives (day)<input id="regSignal" type="number" min="0" max="240" step="1" required></label>
+            <label class="field">Assumed enforcement (day)<input id="regEffective" type="number" min="0" max="240" step="1" required></label>
+            <label class="field">Deployment optics generation<select id="regGeneration"><option>800G</option><option>1.6T</option><option>3.2T</option></select></label>
+            <label class="field">First affected generation<select id="regMinimum"><option>800G</option><option>1.6T</option><option>3.2T</option></select></label>
+            <label class="field">Assumed scope<select id="regScope"><option value="us">US new models only</option><option value="all">All sites (hypothetical stress test)</option></select></label>
+            <label class="field">US BOM-value exemption (%)<input id="regExemption" type="number" min="0" max="100" step="0.1"><span class="tiny muted">Blank disables this unverified exemption.</span></label>
+            <label class="field">Redesign qualification (days)<input id="regQualification" type="number" min="1" max="180" step="1" required></label>
+            <label class="field">Redesign cost premium (%)<input id="regPremium" type="number" min="0" max="100" step="0.1" required></label>
+          </div>
+          <p class="tiny muted">All day numbers are real days within this 240-day planning window, not compressed years. This is not an S. 5548 enactment simulator. Existing authorized models are exempt; missing evidence is unknown, never clear.</p>
+          <div class="ctl-row"><button class="btn primary" type="submit">Inject planning scenario</button><button class="btn" id="regRemove" type="button">Remove injection</button></div>
+        </form>
+        <p id="regError" class="regulation-error" role="alert" hidden></p>
+        <p id="regState" class="tiny" role="status">No regulation injected.</p>
+      </article>
+      <article class="card">
+        <h3 class="fluid-h3">Exposure and deployment impact</h3>
+        <p class="tiny muted">Auto-resolved projection to day 240, with modelled human approval and qualification. Not a forecast or your manual decision outcome. Both operating models use the same physical draws. The original 16-scenario sweep below excludes this overlay.</p>
+        <div id="regExposure"></div>
+        <div class="table-wrap"><table class="t" id="regImpact" aria-label="Proposed regulation versus selected scenario without injection"></table></div>
+        <h4>Design review, beyond optics</h4>
+        <ul class="plain tiny">
+          <li><b>Network topology:</b> port count, reach, link budget, FEC, interoperability, spares and upgrade path; 800G / 1.6T / 3.2T changes are not drop-in substitutions.</li>
+          <li><b>Rack and cooling:</b> optics power and thermal loads, airflow or liquid-cooling envelope, cable paths, burn-in and validated rack configurations.</li>
+          <li><b>Power train:</b> identify actual inverter subassemblies in solar, BESS and UPS; verify authorization and conditional-approval expiry instead of banning every power assembly.</li>
+          <li><b>Deployment:</b> separate US and non-US sites, federal critical-system procurement, new models and installed base; plan qualification, commissioning float, permits and contract change control.</li>
+        </ul>
+      </article>
+    </div>
+    <div class="grid g2 regulation-grid">
+      <article class="card">
+        <h3 class="fluid-h3">Student / RISK_PROVIDER handoff</h3>
+        <p class="tiny muted">Paste sanitized findings with actual part number, resolved provider entity ID, manufacturer/component path, evidence URL and as-of date. One optics finding per site maps to its synthetic lots; this is not a serial-level inventory import. RISK_PROVIDER signals support investigation, not a legal finding. No provider is called.</p>
+        <label class="field" for="regAnalysis">Analysis JSON (browser memory only)</label>
+        <textarea id="regAnalysis" rows="12" maxlength="20000" spellcheck="false" aria-describedby="regPrivacy"></textarea>
+        <div class="ctl-row"><button class="btn" id="regTemplate" type="button">Load synthetic template</button><button class="btn primary" id="regImport" type="button">Apply findings to branch</button><button class="btn" id="regClear" type="button">Clear findings</button></div>
+        <p class="tiny muted" id="regPrivacy">Do not paste credentials, personal data or restricted provider exports. Findings are not saved, transmitted or embedded in links. Run sharing and Monte Carlo export are disabled while findings are applied; reload discards them. Unmapped sites become unknown.</p>
+        <p class="tiny" id="regAnalysisState" role="status">Using synthetic manufacturing/BOM fixtures, not real company data.</p>
+      </article>
+      <article class="card">
+        <h3 class="fluid-h3">Primary-source checkpoints</h3>
+        <p class="tiny muted">Research as of November 14, 2026: official documents located through indexed text. Direct retrieval of government hosts was unavailable; re-check full text, current status and scope before relying on them. The claim that all four optics makers are absent from the current Covered List, and a blanket firmware exclusion, were not independently confirmed.</p>
+        <ul class="plain tiny" id="regSources"></ul>
+      </article>
+    </div>
   </div>
 </section>
 

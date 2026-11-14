@@ -21,6 +21,11 @@
 
 ### How to read this specification
 
+**Feature extension (draft):** [Proposed Regulation specifications](docs/features/proposed-regulation/SPECIFICATIONS.md),
+with [feature concept](docs/features/proposed-regulation/CONCEPT-IDEA.md) and primary-source
+register, detail an isolated intelligence-to-simulation overlay. A static demo is
+available; production integration remains later-phase scope, not an expansion of v1.
+
 **Scope of v1.** This specification covers **v1 = Roadmap Phases 0–2** of the concept
 (Appendix L) in detail:
 
@@ -559,6 +564,7 @@ Stubs only. Each must be specified before its phase starts.
 | FR-IBP-002 | Customer end-use and end-user screening (needs OQ-14) | US-046 | 5 | F18 |
 | FR-IBP-003 | Tier A supplier agents over A2A with identity binding and mandate disclosure | US-047 | 5 | E2, E4 |
 | FR-IBP-004 | Reference-architecture and blueprint change impact: find the configurations, open orders and plans built on a changed blueprint | — | 5 | F14, F35, DCBBS-10 |
+| FR-IBP-005 | Proposed regulatory intelligence shall create a simulation-only branch with source/status/assumptions, part and deployment exposure, and a same-seed no-proposal comparator; student evidence is attributable and unknowns explicit. No production policy promotion. See [feature specifications](docs/features/proposed-regulation/SPECIFICATIONS.md), FR-REG-001–015. | — | 5 | G8, K, FR-FND-007, FR-IBB-004 |
 | FR-CIR-001 | Decommissioning and sanitisation to NIST SP 800-88, resale with buyer screening, recycling | US-048 | 6 | G6, F60–F62 |
 | FR-CIR-002 | Retire remaining legacy applications against the portfolio target | — | 6 | J |
 
