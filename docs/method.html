@@ -63,7 +63,7 @@
     </div>
     <div class="grid g3" id="engineCards"></div>
 
-    <div class="sub-head"><h3 class="fluid-h3">What the scoreboard measures</h3><p class="muted">At the day shown, or day <span id="reportDay"></span> for revenue comparisons.</p></div>
+    <div class="sub-head"><h3 class="fluid-h3">What the scoreboard measures</h3><p class="muted">Live totals use the day shown and include manual decisions. Separately labelled projections auto-resolve exceptions; the scenario sweep uses day <span id="reportDay"></span> for revenue comparisons. <a class="inline" href="simulate.html#latency-impact">Compare cumulative revenue, active admin effort and financing</a>, with editable economic assumptions.</p></div>
     <div class="table-wrap"><table class="t" id="kpiDefs"><thead><tr><th>Metric</th><th>Definition</th><th>Why it matters</th></tr></thead><tbody></tbody></table></div>
 
     <div class="sub-head"><h3 class="fluid-h3">Processing time, before coordination waits</h3><p class="muted">Triangular distributions (min · <b>mode</b> · max), read live from the engine. Ratios compare processing only, not total elapsed task time. Human coordination separately samples same-day replies, follow-ups, meetings (up to 14 days) or reschedules (up to 28 days), with task-specific synthetic probabilities. Reserved human decisions and Envoy's human suppliers have calendar waits in the agent-native model too. See the <a class="inline" href="simulate.html#assumptions">mixture weights</a> and <a class="inline" href="simulate.html#monte-carlo">50-run comparison</a>. Bar length is the log of the processing-time ratio.</p></div>

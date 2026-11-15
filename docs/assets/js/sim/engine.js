@@ -16,6 +16,20 @@ export const PRICE_PER_GPU_HOUR = 2.1;       // illustrative contract rate, $
 export const RACK_COST_M = 3.4;              // illustrative rack-scale system cost, $M
 export const RACK_DEPRECIATION_DAY = RACK_COST_M * 1e6 / (5 * 365.25);
 export const REPORT_DAY = 200;            // common horizon for revenue comparisons
+export const ECONOMICS = { labourRate: 75, capitalRate: 12 };
+// Active internal admin minutes per task, not elapsed calendar time or physical crew labour.
+export const EFFORT_MINUTES = {
+  plan: 30, screen: 20, source: 90, order: 20, clear: 30, receive: 20,
+  invoice: 15, pay: 10, workorder: 20, acceptance: 30, approval: 30,
+};
+
+export function validateEconomics(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Economic assumptions must be an object.');
+  for (const [key, max, label] of [['labourRate', 1000, 'Loaded labour $/hour'], ['capitalRate', 100, 'Annual cost of capital %']]) {
+    if (typeof input[key] !== 'number' || !Number.isFinite(input[key]) || input[key] < 0 || input[key] > max) throw new Error(`${label}: enter a number from 0 to ${max}.`);
+  }
+  return { labourRate: input.labourRate, capitalRate: input.capitalRate };
+}
 
 export const MATERIALS = {
   rack:   { label: 'GPU rack lot', unit: `${RACKS_PER_LOT} × ${GPUS_PER_RACK}-GPU racks`, sup: () => 'ODM1', mode: 'air', make: [24, 28, 36], value: RACKS_PER_LOT * RACK_COST_M, per: 'lot', jit: true },
@@ -110,6 +124,8 @@ export const ASSUMPTIONS = [
   ['Manufacture, transit, construction', 'identical in both modes (common random numbers)', 'identical', 'illustrative'],
   ['Utility energisation dates', 'fixed per site (104 / 112 / 118)', 'same', 'illustrative'],
   ['Contract rate / rack cost', `$${PRICE_PER_GPU_HOUR}/GPU-hour · $${RACK_COST_M}M per 72-GPU rack`, 'same', 'illustrative'],
+  ['Human toil (active internal admin)', 'reserved approvals and resolved exceptions; not calendar waits', 'one standard effort allocation per task, not per ledger entry; see economic assumptions', 'illustrative'],
+  ['Loaded admin labour / cost of capital', `$${ECONOMICS.labourRate}/hour; ${ECONOMICS.capitalRate}% annual simple charge, editable`, 'same rates; material cash outlays from successful PaymentAdvice events, no deposits assumed', 'illustrative'],
 ];
 
 const tri = (r, [a, b, c]) => r.tri(a, b, c);
@@ -161,6 +177,7 @@ export class Sim {
     this.ledger = []; this.msgs = []; this.alerts = []; this.decisions = []; this.detections = []; this.latencies = [];
     this.msgCount = 0; this.msgFam = {}; this.deskCount = {}; this.deskLast = {};
     this.humanApprovals = 0;
+    this.effort = []; this.payments = [];
     this.cost = { premium: 0, tariff: 0, expedite: 0 };
     this.exposure = 0; this.gates = []; this.hooks = { begin: [], complete: [], live: [], stock: [] };
     this.series = []; this.doneAt = null;
@@ -185,6 +202,7 @@ export class Sim {
     return days;
   }
   humanDelay(key) { return this.adm(key, this.A.human) + this.coordination(key, 'human'); }
+  recordEffort(task) { this.effort.push({ t: this.t, task, minutes: EFFORT_MINUTES[task] }); }
   at(t, fn) { this.q.push({ t: Math.max(t, this.t), s: this.seq++, fn }); }
   after(dt, fn) { this.at(this.t + dt, fn); }
   hook(kind, fn) { this.hooks[kind].push(fn); }
@@ -300,6 +318,7 @@ export class Sim {
     if (!d || d.status !== 'open') return false;
     const opt = d.options.find(o => o.id === optId) || d.options[0];
     Object.assign(d, { status: 'resolved', resolvedAt: this.t, choice: opt.id, by });
+    this.recordEffort('approval');
     this.log('Human', `${d.id} → ${opt.label} (${by}, ${fmtLag(this.t - d.t)})`, { sev: 'human', kind: 'decision', human: true });
     opt.effect?.(this);
     for (const lid of d.block) { const l = this.lines.find(x => x.id === lid); if (l) this.release(l, d.id); }
@@ -369,7 +388,12 @@ export class Sim {
   _dur(l, stage) {
     const A = this.A, k = `${l.id}|${stage}|${l.attempt}`, s = supplier(l.supId);
     const wait = task => this.coordination(k, task);
-    const approval = () => (this.mode === 'native' && this.autonomy === 'dayone') ? (this.humanApprovals++, this.humanDelay(`appr|${k}`)) : 0;
+    const approval = () => {
+      if (this.mode !== 'native' || this.autonomy !== 'dayone') return 0;
+      this.humanApprovals++;
+      this.recordEffort('approval');
+      return this.humanDelay(`appr|${k}`);
+    };
     switch (stage) {
       case 'plan': return this.adm(k, A.plan) + (this.mode === 'legacy' ? this.adminRng(`cycle|${l.id}`).float(0, A.planCycle) : 0);
       case 'release': return 0;
@@ -467,6 +491,8 @@ export class Sim {
 
   _onBegin(l, stage) {
     const s = supplier(l.supId), nat = this.mode === 'native';
+    if (!nat && ['plan', 'screen', 'source', 'order', 'receive'].includes(stage)) this.recordEffort(stage);
+    if (!nat && stage === 'clear' && l.gateway) this.recordEffort('clear');
     switch (stage) {
       case 'plan': if (l.kind === 'rack' && l.lot.i === 0 && l.hall.idx === 0) this.log('Planner', `Contract ${l.site.contract} signed → ${l.site.hallCount * l.site.racksPerHall} racks · ${(l.site.hallCount * l.site.racksPerHall * GPUS_PER_RACK).toLocaleString('en-US')} GPUs at ${l.site.name}; need-by day ${l.site.needBy.join(' / ')}`, { sev: 'ok', site: l.site.id }); break;
       case 'screen':
@@ -510,10 +536,13 @@ export class Sim {
     if (l.kind === 'rack') for (const rk of l.lot.racks) rk.receivedAt = this.t;
     // finance tail
     this.after(this.adm(`${l.id}|inv`, this.A.invoice), () => {
+      if (this.mode === 'legacy') this.recordEffort('invoice');
       this.msg('Finance', 'Invoice', l.supId, 'in', l);
       this.after(this.adm(`${l.id}|pay`, this.A.pay), () => {
         if (this.sup[l.supId].hold) { this.log('Payables', `Payment to ${supplier(l.supId).name} held (compliance)`, { sev: 'warn', sup: l.supId }); return; }
         if (this.sup[l.supId].sanctioned) { this.exposure++; this.log('Auditor', `Payment released to ${supplier(l.supId).name} after designation in its ownership chain`, { sev: 'risk', sup: l.supId }); }
+        if (this.mode === 'legacy') this.recordEffort('pay');
+        this.payments.push({ t: this.t, line: l.id, amountM: l.value });
         this.msg('Finance', 'PaymentAdvice', l.supId, 'out', l);
       });
     });
@@ -563,6 +592,7 @@ export class Sim {
     const lot = hall.lots.find(x => x.state === 'pending' && x.rack.done && x.optics.done && x.switch.done && !x.rack.quarantine);
     if (!lot) return;
     hall.crewBusy = true; lot.state = 'installing';
+    if (this.mode === 'legacy') this.recordEffort('workorder');
     const d = this.adm(`${hall.id}|L${lot.i}|wo`, this.A.workorder) + this.adm(`${hall.id}|L${lot.i}|install`, this.A.install)
       + (this.mode === 'legacy' ? this.coordination(`${hall.id}|L${lot.i}|wo`, 'workorder') : 0);
     this.log('Deployer', `Install ${hall.id} lot ${lot.i + 1}: 8 racks, optics, leaf switches (${d.toFixed(1)} d)`, { site: hall.site.id });
@@ -578,6 +608,7 @@ export class Sim {
   }
   _accept(lot) {
     const hall = lot.hall;
+    if (this.mode === 'legacy') this.recordEffort('acceptance');
     const r = this.rng(`phys|${hall.id}|L${lot.i}|doa`);
     const doa = r.chance(0.22) ? 1 : 0;
     const failed = new Set();
@@ -625,7 +656,8 @@ export class Sim {
   }
 
   // ---------- read-outs ----------
-  kpis(at = this.t) {
+  kpis(at = this.t, economics = ECONOMICS) {
+    const { labourRate, capitalRate } = validateEconomics(economics);
     const T = Math.min(at, this.horizon);
     const racks = this.racks;
     const live = racks.filter(r => r.liveAt != null && r.liveAt <= T);
@@ -648,6 +680,21 @@ export class Sim {
     lostRev = late * GPUS_PER_RACK * 24 * PRICE_PER_GPU_HOUR / 1e6;
     const dec = this.decisions.filter(d => d.status === 'resolved');
     const decLat = dec.map(d => d.resolvedAt - d.t).sort((a, b) => a - b);
+    const effort = this.effort.filter(e => e.t <= T);
+    const humanHours = effort.reduce((sum, e) => sum + e.minutes, 0) / 60;
+    let paidCapitalM = 0, capitalDaysM = 0, preLiveCapitalDaysM = 0;
+    const byId = new Map(this.lines.map(l => [l.id, l]));
+    for (const payment of this.payments) {
+      if (payment.t > T) continue;
+      paidCapitalM += payment.amountM;
+      capitalDaysM += payment.amountM * (T - payment.t);
+      const line = byId.get(payment.line);
+      const lots = line.lot ? [line.lot] : line.hall ? line.hall.lots : line.site.halls.flatMap(h => h.lots);
+      const supported = lots.flatMap(l => l.racks);
+      // Shared hall/site material is allocated evenly to its dependent racks.
+      preLiveCapitalDaysM += supported.reduce((sum, r) =>
+        sum + payment.amountM / supported.length * Math.max(0, Math.min(T, r.liveAt ?? T) - payment.t), 0);
+    }
     return {
       t: T, gpusLive: live.length * GPUS_PER_RACK, gpusTotal: racks.length * GPUS_PER_RACK, racksLive: live.length, racksTotal: racks.length,
       gpusBillable: billable.length * GPUS_PER_RACK, revenuePerDay: billable.length * GPUS_PER_RACK * 24 * PRICE_PER_GPU_HOUR,
@@ -658,6 +705,10 @@ export class Sim {
       approvals: this.humanApprovals,
       agentActions: this.mode === 'native' ? this.ledger.filter(e => !e.human && e.t <= T).length : 0,
       humanTouches: this.mode === 'native' ? this.decisions.length + this.humanApprovals : this.ledger.filter(e => e.t <= T).length,
+      humanTasks: effort.length, humanHours, labourCost: humanHours * labourRate,
+      paidCapitalM, capitalDaysM, preLiveCapitalDaysM,
+      capitalCostM: capitalDaysM * capitalRate / 100 / 365.25,
+      preLiveCapitalCostM: preLiveCapitalDaysM * capitalRate / 100 / 365.25,
       messages: this.msgCount, exposure: this.exposure, premiumM: this.cost.premium, tariffM: this.cost.tariff, expediteM: this.cost.expedite,
       detection: this.detections.length ? Math.max(...this.detections.map(d => d.lag)) : null,
     };

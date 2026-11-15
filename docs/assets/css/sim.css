@@ -4,7 +4,7 @@
 .latency-impact { padding: 18px 0; background: var(--surface); border-bottom: 1px solid var(--border); }
 .impact-heading { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 6px 18px; margin-bottom: 12px; }
 .impact-heading h2 { font-family: var(--font-display); font-size: 1.4rem; }
-.impact-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.impact-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .impact-card { padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); min-width: 0; }
 .impact-card h3 { font-family: var(--font-mono); color: var(--muted); font-size: 0.64rem; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px; }
 .impact-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
@@ -14,6 +14,12 @@
 .impact-card p { margin-top: 8px; font-size: 0.76rem; line-height: 1.5; }
 .impact-card .impact-detail, .impact-method { color: var(--muted); font-size: 0.67rem; line-height: 1.5; }
 .impact-method { margin-top: 10px; max-width: 110ch; }
+.impact-money strong { font-size: clamp(1.1rem, 1.65vw, 1.8rem); overflow-wrap: anywhere; }
+.impact-assumptions { margin-top: 14px; font-size: 0.8rem; }
+.impact-assumptions summary { cursor: pointer; }
+.economics-form { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin-top: 12px; }
+.economics-form input { max-width: 180px; }
+#economicsError { color: var(--risk); margin-top: 8px; }
 .regulation-grid { margin-top: 24px; align-items: start; }
 .regulation-form { display: grid; gap: 14px; margin-top: 18px; }
 .regulation-notice { margin-bottom: 16px; }
@@ -298,7 +304,10 @@ table.sweep .pending td { color: var(--muted); }
 .limits { margin-top: 18px; }
 
 /* ---------- responsive ---------- */
-@media (max-width: 1280px) { .page-sim { --rail-l: 300px; --rail-r: 340px; } }
+@media (max-width: 1280px) {
+  .page-sim { --rail-l: 300px; --rail-r: 340px; }
+  .impact-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 @media (max-width: 1100px) {
   .sim-stage { height: auto; min-height: 0; overflow: visible; display: flex; flex-direction: column; gap: 12px; padding-bottom: 14px; }
   .sim-map { position: relative; inset: auto; height: 64svh; min-height: 400px; order: 0; }

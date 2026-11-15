@@ -2,7 +2,7 @@
 // Run: npm test
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { Sim, REPORT_DAY, PRICE_PER_GPU_HOUR } from '../docs/assets/js/sim/engine.js';
+import { Sim, ECONOMICS, validateEconomics, REPORT_DAY, PRICE_PER_GPU_HOUR } from '../docs/assets/js/sim/engine.js';
 import { SCENARIOS, freshScenario } from '../docs/assets/js/sim/scenarios.js';
 import { SITES, GPUS_PER_RACK, supplier } from '../docs/assets/js/sim/world.js';
 import { runLatencyTrial, summarizeLatencyTrials } from '../docs/assets/js/sim/monte-carlo.js';
@@ -85,6 +85,96 @@ test('daily revenue excludes paused racks and recovers at the end of the pause',
   assert.ok(Math.abs(paused.revenuePerDay - (full.revenuePerDay - hallGpus * 24 * PRICE_PER_GPU_HOUR)) < 1e-6);
   assert.equal(paused.gpusLive, full.gpusLive, 'a billing pause does not undo acceptance');
   assert.equal(recovered.revenuePerDay, full.revenuePerDay);
+});
+
+test('cumulative revenue shortfall persists when the current daily revenue gap is zero', () => {
+  const gap = day => baseline.native.kpis(day).revenueM - baseline.legacy.kpis(day).revenueM;
+  assert.equal(gap(0), 0);
+  const early = baseline.native.kpis().firstLive + 1;
+  assert.ok(gap(early) > 0);
+  assert.ok(gap(early + 1) > gap(early), 'shortfall grows while native earns and legacy does not');
+  assert.equal(baseline.native.kpis(240).revenuePerDay - baseline.legacy.kpis(240).revenuePerDay, 0);
+  assert.ok(gap(240) > 13 && gap(240) < 14, 'the completed baseline retains millions of foregone revenue, not $0');
+  assert.ok(Math.abs(gap(240) - gap(200)) < 1e-9, 'same earning rates stop further accumulation; they do not recover missed revenue');
+});
+
+test('admin effort counts business tasks rather than ledger chatter or calendar waiting', () => {
+  const legacy = baseline.legacy.kpis(), native = baseline.native.kpis();
+  assert.ok(legacy.humanHours > native.humanHours && native.humanHours > 0);
+  const s = run(0, 'legacy');
+  const before = s.kpis();
+  s.log('Inbox', 'Extra rendering/audit detail, not another task');
+  s.coordination('extra-calendar-probe', 'human');
+  assert.equal(s.kpis().humanHours, before.humanHours);
+  assert.equal(s.kpis().humanTasks, before.humanTasks);
+  assert.ok(run(0, 'native', { autonomy: 'dayone' }).kpis().humanHours > native.humanHours, 'day-one reserved approvals consume internal effort');
+  const manual = new Sim({ autoResolve: false });
+  const decision = manual.decide({ title: 'Review explicitly', desk: 'Conductor', options: [{ id: 'approve', label: 'Approve' }], rec: 'approve' });
+  manual.advanceTo(20);
+  assert.equal(manual.kpis().humanHours, 0, '20 days pending is not 480 hours of paid work');
+  manual.resolve(decision.id, 'approve', 'you');
+  assert.equal(manual.kpis().humanHours, 0.5, 'one resolved decision allocates 30 active minutes');
+});
+
+test('financing integrates successful cash outlays, allocating shared pre-live exposure per rack', () => {
+  const s = new Sim();
+  const line = s.lines.find(l => l.kind === 'rack');
+  line.lot.racks.forEach((r, i) => { r.liveAt = i < 4 ? 20 : 40; });
+  s.payments.push({ t: 10, line: line.id, amountM: 3.6525 });
+  const rates = { ...ECONOMICS, capitalRate: 10 };
+  assert.equal(s.kpis(9, rates).paidCapitalM, 0);
+  assert.equal(s.kpis(10, rates).capitalCostM, 0, 'no time charge at the instant cash leaves');
+  assert.ok(Math.abs(s.kpis(30, rates).capitalCostM - 0.02) < 1e-12);
+  assert.ok(Math.abs(s.kpis(30, rates).preLiveCapitalCostM - 0.015) < 1e-12);
+  assert.ok(Math.abs(s.kpis(50, rates).capitalCostM - 0.04) < 1e-12);
+  assert.ok(Math.abs(s.kpis(50, rates).preLiveCapitalCostM - 0.02) < 1e-12, 'first-live ends pre-live exposure, not all financing');
+});
+
+test('payment holds and unpaid orders do not count as financed cash', () => {
+  const s = new Sim({ scenario: { setup(sim) { sim.sup.OPT1.hold = true; } } });
+  s.advanceTo(10);
+  assert.ok(s.ledger.some(e => e.text.startsWith('PurchaseOrder')));
+  assert.equal(s.kpis().paidCapitalM, 0);
+  assert.equal(s.kpis().capitalCostM, 0);
+  s.advanceTo(HORIZON);
+  assert.ok(s.ledger.some(e => e.text.startsWith('Payment to Lumen Optics held')));
+  assert.ok(s.payments.length > 0);
+  assert.ok(s.payments.every(p => s.lines.find(l => l.id === p.line).kind !== 'optics'));
+  const advices = s.ledger.filter(e => e.text.startsWith('PaymentAdvice '));
+  assert.deepEqual(s.payments.map(p => [p.line, p.t]), advices.map(e => [e.line, e.t]));
+  for (const payment of s.payments) assert.ok(payment.t > s.lines.find(l => l.id === payment.line).stockAt);
+});
+
+test('JIT reduces paid-capital exposure versus ASAP; rates change value, not schedules', () => {
+  const jit = baseline.native.kpis(), asap = run(0, 'native', { policy: 'asap' }).kpis();
+  assert.ok(Math.abs(jit.paidCapitalM - asap.paidCapitalM) < 1e-9, 'compare the same paid material scope');
+  assert.ok(jit.capitalCostM < asap.capitalCostM);
+  assert.ok(jit.preLiveCapitalCostM < asap.preLiveCapitalCostM);
+  const doubled = baseline.native.kpis(HORIZON, { labourRate: ECONOMICS.labourRate * 2, capitalRate: ECONOMICS.capitalRate * 2 });
+  assert.equal(doubled.labourCost, jit.labourCost * 2);
+  assert.equal(doubled.capitalCostM, jit.capitalCostM * 2);
+  assert.equal(doubled.revenueM, jit.revenueM);
+  assert.equal(doubled.allLive, jit.allLive);
+  const zero = baseline.native.kpis(HORIZON, { labourRate: 0, capitalRate: 0 });
+  assert.equal(zero.labourCost, 0);
+  assert.equal(zero.capitalCostM, 0);
+  assert.equal(zero.humanHours, jit.humanHours);
+  assert.equal(zero.paidCapitalM, jit.paidCapitalM);
+  for (const bad of [{ labourRate: -1 }, { labourRate: '75' }, { capitalRate: NaN }, { capitalRate: 101 }]) {
+    assert.throws(() => validateEconomics({ ...ECONOMICS, ...bad }));
+  }
+});
+
+test('historical effort and financing read-outs do not leak future tasks or payments', () => {
+  for (const mode of ['native', 'legacy']) for (const day of [10, 90, 160]) {
+    const partial = new Sim({ mode, scenario: freshScenario(0) });
+    partial.advanceTo(day);
+    const historical = baseline[mode].kpis(day), current = partial.kpis();
+    for (const key of ['humanTasks', 'humanHours', 'labourCost', 'paidCapitalM', 'capitalCostM', 'preLiveCapitalCostM']) {
+      assert.equal(historical[key], current[key], `${mode}: future data leaked into ${key}`);
+    }
+    if (day === 10) assert.ok(historical.humanHours < baseline[mode].kpis().humanHours);
+  }
 });
 
 test('common random numbers: both modes face the same physical world', () => {
@@ -237,6 +327,10 @@ test('manual decisions replay identically after a rewind', () => {
   b.at(choice.t, () => b.resolve(choice.id, choice.opt, 'you'));
   b.advanceTo(30);
   assert.equal(fingerprint(b), fingerprint(a));
+  assert.deepEqual(b.effort, a.effort);
+  assert.deepEqual(b.payments, a.payments);
+  assert.equal(b.kpis().labourCost, a.kpis().labourCost);
+  assert.equal(b.kpis().capitalCostM, a.kpis().capitalCostM);
 });
 
 const regulationRun = (mode = 'native', config = REGULATION_DEFAULTS, analysis = null, n = 0) => {

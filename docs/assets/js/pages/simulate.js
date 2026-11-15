@@ -4,7 +4,7 @@
 import { mountShell, toast } from '../shell.js';
 import { currentProvider } from '../risk.js';
 import { CONCEPT } from '../data/concept.js';
-import { Sim, ASSUMPTIONS, COORDINATION, REPORT_DAY, PRICE_PER_GPU_HOUR, fmtLag } from '../sim/engine.js';
+import { Sim, ASSUMPTIONS, COORDINATION, ECONOMICS, EFFORT_MINUTES, validateEconomics, REPORT_DAY, PRICE_PER_GPU_HOUR, fmtLag } from '../sim/engine.js';
 import { MONTE_CARLO_RUNS, runLatencyTrial, summarizeLatencyTrials } from '../sim/monte-carlo.js';
 import { SCENARIOS, scenarioByN, freshScenario } from '../sim/scenarios.js';
 import { SITES, SUPPLIERS, supplier, GPUS_PER_RACK } from '../sim/world.js';
@@ -28,6 +28,20 @@ const RUN_NAME = { native: 'Agent-native', legacy: 'Legacy' };
 // ---------- configuration (URL is the source of truth) ----------
 const Q = new URLSearchParams(location.search);
 let regulationAnalysis = null, regulationError = '';
+let economicsError = '';
+function economicsFromURL() {
+  try {
+    const rates = { ...ECONOMICS };
+    for (const key of Object.keys(rates)) if (Q.has(key)) {
+      if (!Q.get(key).trim()) throw new Error(`${key} cannot be blank.`);
+      rates[key] = Number(Q.get(key));
+    }
+    return validateEconomics(rates);
+  } catch (err) {
+    economicsError = `Economic rates rejected; labelled defaults loaded: ${err.message}`;
+    return { ...ECONOMICS };
+  }
+}
 function regulationFromURL() {
   const value = Q.get('regulation');
   if (value === null) return null;
@@ -50,6 +64,7 @@ const cfg = {
   view: Q.get('view') === 'campus' ? 'campus' : 'globe',
   site: SITES.some(s => s.id === Q.get('site')) ? Q.get('site') : 'TX1',
   regulation: regulationFromURL(),
+  economics: economicsFromURL(),
 };
 const startDay = num(Q.get('t'), 0, HORIZON, 0);
 const show = { lanes: true, ships: true, msgs: true, sups: true, risk: true };
@@ -65,6 +80,7 @@ function linkURL(withDay = true) {
   set('view', cfg.view, 'globe'); set('site', cfg.site, 'TX1');
   if (cfg.regulation && !regulationAnalysis) p.set('regulation', JSON.stringify(cfg.regulation));
   else p.delete('regulation');
+  for (const key of Object.keys(ECONOMICS)) set(key, String(cfg.economics[key]), String(ECONOMICS[key]));
   if (withDay && T > 0.5) p.set('t', String(Math.round(T))); else p.delete('t');
   u.hash = '';
   return u;
@@ -93,7 +109,7 @@ function project() {
   impactProjection = {
     native: proj.native.kpis(HORIZON),
     legacy: proj.legacy.kpis(HORIZON),
-    revenueGapM: proj.native.kpis(REPORT_DAY).revenueM - proj.legacy.kpis(REPORT_DAY).revenueM,
+    revenueGapM: proj.native.kpis(HORIZON).revenueM - proj.legacy.kpis(HORIZON).revenueM,
   };
 }
 function advance(to, { quiet = false } = {}) {
@@ -206,7 +222,7 @@ function renderMarks() {
 // ---------- scoreboard ----------
 const dollars = v => `$${Math.round(v).toLocaleString('en-US')}`;
 function renderImpact(kn, kl) {
-  $('#impactContext').textContent = `S${cfg.scenario} · seed ${cfg.seed} · auto-resolved projection`;
+  $('#impactContext').textContent = `S${cfg.scenario}${cfg.regulation ? ' + proposed regulation' : ''} · seed ${cfg.seed} · day ${T.toFixed(1)} · current run`;
   for (const mode of ['native', 'legacy']) {
     const k = impactProjection[mode];
     $(`#${mode}DaysLive`).textContent = k.allLive == null ? `>${HORIZON} days` : `${k.allLive.toFixed(1)} days`;
@@ -220,28 +236,64 @@ function renderImpact(kn, kl) {
   } else if (n != null || l != null) {
     gap.textContent = `${n == null ? 'Agent-native' : 'Legacy'} more than ${(HORIZON - (n ?? l)).toFixed(1)} days later; incomplete at day ${HORIZON}.`;
   } else gap.textContent = `Neither model reaches full capacity by day ${HORIZON}.`;
+  const total = (kn.revenueM - kl.revenueM) * 1e6;
+  const trailing = total < -0.5 ? 'Agent-native' : 'Legacy';
+  $('#latencyRevenueTitle').textContent = Math.abs(total) < 0.5 ? 'Cumulative revenue gap · to date' : `${trailing} revenue shortfall · to date`;
+  $('#latencyRevenueTotal').textContent = dollars(Math.abs(total));
+  $('#latencyRevenueDetail').textContent = `Earned-revenue difference through day ${T.toFixed(1)}, including manual decisions.`;
+  $('#nativeRevenue').textContent = `$${kn.revenueM.toFixed(2)}M`;
+  $('#legacyRevenue').textContent = `$${kl.revenueM.toFixed(2)}M`;
   const dailyGap = kn.revenuePerDay - kl.revenuePerDay;
-  $('#latencyRevenueRate').textContent = `${dollars(Math.abs(dailyGap))}/day`;
-  $('#latencyRevenueDetail').textContent = dailyGap === 0
-    ? `Day ${T.toFixed(1)}: no daily revenue gap between models.`
-    : `Day ${T.toFixed(1)}: ${dailyGap > 0 ? 'legacy' : 'agent-native'} trails by ${Math.abs(kn.gpusBillable - kl.gpusBillable).toLocaleString('en-US')} billable GPUs.`;
-  const total = impactProjection.revenueGapM;
-  $('#latencyRevenueTotal').textContent = Math.abs(total) < 0.0000005
-    ? `No projected revenue gap through day ${REPORT_DAY}.`
-    : `${dollars(Math.abs(total) * 1e6)} projected ${total > 0 ? 'legacy' : 'agent-native'} revenue shortfall through day ${REPORT_DAY} (auto-resolved).`;
+  $('#latencyRevenueRate').textContent = Math.abs(dailyGap) < 0.5
+    ? `$0/day additional gap now.${Math.abs(total) >= 0.5 ? ' Earlier shortfall remains.' : ' No cumulative gap yet.'}`
+    : `${dailyGap > 0 ? 'Legacy' : 'Agent-native'} earns ${dollars(Math.abs(dailyGap))}/day less now; the cumulative gap can grow or shrink.`;
+  const projected = impactProjection.revenueGapM * 1e6;
+  $('#latencyRevenueProjection').textContent = `Day ${HORIZON} forecast: ${dollars(Math.abs(projected))} ${projected < -0.5 ? 'agent-native' : 'legacy'} shortfall (auto-resolved; excludes manual choices).`;
+  for (const [mode, k] of [['native', kn], ['legacy', kl]]) {
+    $(`#${mode}HumanHours`).textContent = `${k.humanHours.toFixed(1)} h`;
+    $(`#${mode}LabourCost`).textContent = `${dollars(k.labourCost)} labour value`;
+    $(`#${mode}CapitalCost`).textContent = dollars(k.capitalCostM * 1e6);
+  }
+  const hoursSaved = kl.humanHours - kn.humanHours;
+  $('#humanSavings').textContent = `${Math.abs(hoursSaved).toFixed(1)} admin hours ${hoursSaved < 0 ? 'more' : 'saved'} with agents (${dollars(Math.abs(kl.labourCost - kn.labourCost))} at $${cfg.economics.labourRate}/h).`;
+  $('#humanTaskDetail').textContent = `${kn.humanTasks} native / ${kl.humanTasks} legacy standard admin tasks so far; wait days are not work hours.`;
+  const capitalSaved = (kl.capitalCostM - kn.capitalCostM) * 1e6;
+  $('#capitalDifference').textContent = `Agents incur ${dollars(Math.abs(capitalSaved))} ${capitalSaved < 0 ? 'more' : 'less'} financing opportunity cost at ${cfg.economics.capitalRate}% annually.`;
+  $('#capitalPreLive').textContent = `Pre-live portion: native ${dollars(kn.preLiveCapitalCostM * 1e6)} / legacy ${dollars(kl.preLiveCapitalCostM * 1e6)}.`;
+  $('#capitalPaid').textContent = `Material cash paid so far: native $${kn.paidCapitalM.toFixed(1)}M / legacy $${kl.paidCapitalM.toFixed(1)}M.`;
   $('#fleetDelayRate').textContent = `${dollars(TOTAL_GPUS * 24 * PRICE_PER_GPU_HOUR)}/day`;
   $('#fleetDelayDetail').textContent = `${TOTAL_GPUS.toLocaleString('en-US')} GPUs × 24 h × $${PRICE_PER_GPU_HOUR.toFixed(2)}/GPU-hour`;
 }
+for (const key of Object.keys(ECONOMICS)) $(`#${key}`).value = String(cfg.economics[key]);
+$('#economicsError').textContent = economicsError;
+$('#economicsError').hidden = !economicsError;
+if (economicsError) $('.impact-assumptions').open = true;
+$('#effortAssumptions').textContent = Object.entries(EFFORT_MINUTES).map(([task, minutes]) => `${task} ${minutes} min`).join('; ');
+$('#economicsForm').addEventListener('submit', event => {
+  event.preventDefault();
+  try {
+    const rates = validateEconomics({ labourRate: Number($('#labourRate').value), capitalRate: Number($('#capitalRate').value) });
+    cfg.economics = rates;
+    $('#economicsError').hidden = true;
+    dirty = 'all';
+    syncURL();
+  } catch (err) {
+    $('#economicsError').textContent = err.message;
+    $('#economicsError').hidden = false;
+  }
+});
 const ROWS = [
   { k: 'GPUs billable', f: k => k.gpusBillable, fmt: v => v.toLocaleString('en-US'), better: 1, hero: true },
   { k: 'First rack billable', f: k => k.firstLive, fmt: v => (v == null ? '—' : `day ${Math.round(v)}`), better: -1 },
   { k: 'All 128 racks billable', f: k => k.allLive, fmt: v => (v == null ? '—' : `day ${Math.round(v)}`), better: -1 },
   { k: 'Dock → billable (median)', f: k => k.d2bMedian, fmt: v => (v == null ? '—' : `${v.toFixed(0)} d`), better: -1 },
   { k: 'Late rack-days vs need-by', f: k => k.lateRackDays, fmt: v => Math.round(v).toLocaleString('en-US'), better: -1 },
-  { k: 'Idle capital (depreciation)', f: k => k.idleCostM, fmt: v => `$${v.toFixed(1)}M`, better: -1 },
+  { k: 'Idle depreciation (not financing)', f: k => k.idleCostM, fmt: v => `$${v.toFixed(1)}M`, better: -1 },
   { k: 'Revenue earned', f: k => k.revenueM, fmt: v => `$${v.toFixed(1)}M`, better: 1 },
   { k: 'Premium · tariff · expedite', f: k => k.premiumM + k.tariffM + k.expediteM, fmt: v => `$${v.toFixed(1)}M`, better: -1 },
-  { k: 'Human touches', f: k => k.humanTouches, fmt: v => v.toLocaleString('en-US'), better: -1, tip: 'Agent-native: escalations plus approvals. Legacy: every ledger entry is a person doing the work.' },
+  { k: 'Human admin hours', f: k => k.humanHours, fmt: v => `${v.toFixed(1)} h`, better: -1, tip: 'Standard active effort per internal administrative task; calendar waits, physical crew work and supplier employees excluded.' },
+  { k: 'Loaded admin labour', f: k => k.labourCost, fmt: dollars, better: -1 },
+  { k: 'Cost of capital', f: k => k.capitalCostM, fmt: v => `$${v.toFixed(2)}M`, better: -1, tip: 'Successful material payments × annual rate × days outstanding / 365.25. Excludes depreciation, construction, extras and revenue cash receipts.' },
   { k: 'Detection lag', f: k => k.detection, fmt: v => (v == null ? '—' : fmtLag(v)), better: -1 },
   { k: 'Compliance exposure', f: k => k.exposure, fmt: v => String(v), better: -1, tip: 'Purchase orders or payments to a party after a designation in its ownership chain.' },
 ];
@@ -256,7 +308,7 @@ function delta(r, a, b) {
   return [`${d > 0 ? '+' : '−'}${s}${/day/.test(r.fmt(1)) ? ' d' : ''}`, good ? 'good' : 'bad'];
 }
 function renderScore() {
-  const kn = sims.native.kpis(T), kl = sims.legacy.kpis(T);
+  const kn = sims.native.kpis(T, cfg.economics), kl = sims.legacy.kpis(T, cfg.economics);
   renderImpact(kn, kl);
   $('#kpi').innerHTML = `<thead><tr><th>at day ${Math.floor(T)}</th><th>Native</th><th>Legacy</th><th>Δ</th></tr></thead><tbody>${ROWS.map(r => {
     const a = r.f(kn), b = r.f(kl), [dv, dc] = delta(r, a, b);

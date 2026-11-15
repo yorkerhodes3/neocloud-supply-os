@@ -111,14 +111,44 @@ The Monte Carlo section shows completion and task-wait percentiles and exports t
 in completion percentiles as right-censored results; exceptions auto-resolve in the
 ensemble regardless of manual choices in the live run.
 
-The **days-to-live and revenue-impact callout** above the simulation contrasts
-projected full-capacity days (elapsed from day 0, auto-resolved), the live daily
-revenue gap, and the projected cumulative revenue gap through day 200. Daily revenue
-is currently billable GPUs (excluding paused racks) × 24 × the illustrative
-$2.10/GPU-hour rate. Full-fleet one-day delay exposure is shown separately:
-9,216 GPUs × 24 × $2.10 = **$464,486/day**. These are gross revenue opportunities,
-not profit or guaranteed savings; disruption comparisons include response and policy
-effects as well as operating-model timing.
+The **impact cards** above the simulation show projected days to full capacity,
+**cumulative revenue shortfall**, **active human admin effort and labour value**,
+and **cost of capital**. Revenue, effort and financing use the **current run through
+the current day**, including manual decisions and rewind. Only days-to-live and the
+separately labelled day-240 revenue forecast auto-resolve exceptions.
+
+The revenue headline is native earned GPU-hour revenue minus legacy revenue, naming
+whichever model trails. At baseline seed 42, by day 240 the gap is about **$13.20M**
+even though the additional daily gap is **$0/day**: both fleets now earn the same rate,
+so earlier foregone revenue stays unrecovered but no longer accumulates. The daily
+gap and full-fleet one-day exposure ($464,486/day at $2.10/GPU-hour) are secondary
+context, not cumulative loss. This is comparative gross revenue, not profit; scenario
+differences also include policy and response effects.
+
+**Toil is not calendar wait.** `EFFORT_MINUTES` in `sim/engine.js` assigns standard
+active minutes to internal tasks: plan 30, screen 20, source 90, order 20, customs 30,
+receive 20, invoice 15, payment 10, crew scheduling 20, acceptance sign-off 30 and
+approval 30. Allocations occur at task start, exceptions when resolved. Agents retain
+reserved/day-one approvals; they do not charge our payroll for a supplier's staff.
+Extra log messages and meeting wait days do not multiply labour. Default loaded
+labour is **$75/hour**, editable: this values gross capacity released, not headcount
+reductions or net savings after agent costs. Physical crews, standing oversight and
+agent-platform operating costs are excluded.
+
+**Cost of capital is not depreciation.** Each successful simulated material payment
+accrues a simple opportunity charge: `base payment × annual rate × elapsed days /
+365.25`, default **12%**, editable. It uses actual simulated payment timing (including
+the different payment terms), not PO issue dates. JIT versus ASAP changes when cash
+leaves; earlier payment can cost more even if agents deliver sooner. A separate
+**pre-live portion** allocates shared equipment across dependent racks and ends at
+each rack's first billing; the total charge continues on paid capital through the
+current day. Unpaid/blocked payments, deposits, construction/services, premiums/tariffs,
+revenue cash receipts, principal recovery and compounding are not included. Idle
+depreciation remains separate, and the components are not summed into a claimed ROI.
+
+The economic rates travel in run links as `labourRate` and `capitalRate`; they change
+valuations only, not schedules, and accept zero. All these estimates need operational
+calibration before use in a business case.
 
 **Regulation demo limits:** the reported 3.2T phase-in and 65% US BOM-value exemption
 are unverified assumptions, not operative law. Official sources are linked with

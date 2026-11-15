@@ -25,12 +25,12 @@
 <section class="latency-impact" id="latency-impact" aria-labelledby="impact-title">
   <div class="wrap-wide">
     <div class="impact-heading">
-      <h2 id="impact-title">Days to live. Dollars lost to waiting.</h2>
-      <span class="tiny muted" id="impactContext">Auto-resolved projection</span>
+      <h2 id="impact-title">Days to live. Cumulative impact.</h2>
+      <span class="tiny muted" id="impactContext">Current run</span>
     </div>
     <div class="impact-grid">
       <article class="impact-card">
-        <h3>Days to live · full capacity</h3>
+        <h3>Days to live · projected</h3>
         <div class="impact-pair">
           <div><span>Agent-native</span><strong id="nativeDaysLive">—</strong><small id="nativeFirstLive"></small></div>
           <div><span>Legacy</span><strong id="legacyDaysLive">—</strong><small id="legacyFirstLive"></small></div>
@@ -39,19 +39,51 @@
         <p class="impact-detail">Elapsed days from simulation day 0, not days remaining. Projections auto-resolve exceptions and exclude manual choices.</p>
       </article>
       <article class="impact-card">
-        <h3>Revenue lost to latency · now</h3>
-        <strong class="impact-value" id="latencyRevenueRate">—</strong>
+        <h3 id="latencyRevenueTitle">Cumulative revenue shortfall</h3>
+        <strong class="impact-value" id="latencyRevenueTotal">—</strong>
         <p id="latencyRevenueDetail"></p>
-        <p class="impact-detail" id="latencyRevenueTotal"></p>
+        <div class="impact-pair impact-money">
+          <div><span>Agent-native earned</span><strong id="nativeRevenue">—</strong></div>
+          <div><span>Legacy earned</span><strong id="legacyRevenue">—</strong></div>
+        </div>
+        <p class="impact-detail" id="latencyRevenueRate"></p>
+        <p class="impact-detail" id="latencyRevenueProjection"></p>
       </article>
       <article class="impact-card">
-        <h3>One-day delay · full fleet</h3>
-        <strong class="impact-value" id="fleetDelayRate">—</strong>
-        <p id="fleetDelayDetail"></p>
-        <p class="impact-detail">Revenue exposure if the entire fleet slips by one day, not the current loss.</p>
+        <h3>Human admin toil · to date</h3>
+        <div class="impact-pair impact-money">
+          <div><span>Agent-native</span><strong id="nativeHumanHours">—</strong><small id="nativeLabourCost"></small></div>
+          <div><span>Legacy</span><strong id="legacyHumanHours">—</strong><small id="legacyLabourCost"></small></div>
+        </div>
+        <p id="humanSavings"></p>
+        <p class="impact-detail" id="humanTaskDetail"></p>
+        <p class="impact-detail">Active internal admin effort, not elapsed waiting or physical crew labour. Gross capacity value, not headcount reductions or net savings after agent costs.</p>
+      </article>
+      <article class="impact-card">
+        <h3>Cost of capital · to date</h3>
+        <div class="impact-pair impact-money">
+          <div><span>Agent-native</span><strong id="nativeCapitalCost">—</strong></div>
+          <div><span>Legacy</span><strong id="legacyCapitalCost">—</strong></div>
+        </div>
+        <p id="capitalDifference"></p>
+        <p class="impact-detail" id="capitalPreLive"></p>
+        <p class="impact-detail" id="capitalPaid"></p>
+        <p class="impact-detail">Material cash paid × annual rate × days since payment / 365.25. Earlier payment can cost more, even with faster deployment. Not depreciation or net working capital.</p>
       </article>
     </div>
-    <p class="impact-method" id="impactMethod">Daily gap = difference in currently billable GPUs × 24 × the illustrative contract rate; paused racks are excluded. This is gross revenue opportunity, not profit or guaranteed savings. Baseline compares operating-model timing; disruption scenarios also include policy and response effects.</p>
+    <p class="impact-method" id="impactMethod">Revenue, toil and financing totals follow the current day and your manual decisions; rewind reduces them. Revenue shortfall is the difference in cumulative earned GPU-hour revenue, not a daily rate or accounting loss. Once both runs earn at the same rate the shortfall stops growing; it does not disappear. Days-to-live and the separately labelled end-of-window forecast auto-resolve exceptions. Disruption comparisons also include policy and response effects.</p>
+    <p class="impact-method">Full-fleet one-day delay exposure: <b id="fleetDelayRate">—</b> (<span id="fleetDelayDetail"></span>), not the loss in this run.</p>
+    <details class="impact-assumptions">
+      <summary>Economic assumptions (illustrative, editable)</summary>
+      <form id="economicsForm" class="economics-form">
+        <label class="field">Loaded internal admin labour ($/hour)<input id="labourRate" type="number" min="0" max="1000" step="0.01" required></label>
+        <label class="field">Annual cost of capital (%)<input id="capitalRate" type="number" min="0" max="100" step="0.01" required></label>
+        <button class="btn sm" type="submit">Apply rates</button>
+      </form>
+      <p class="tiny" id="economicsError" role="alert" hidden></p>
+      <p class="impact-method">Rate changes affect valuation only, not schedules. Rates travel in the run link. Labour is standard effort booked per task start, plus decisions when resolved: <span id="effortAssumptions"></span>. No wages are charged for calendar waits. Agent-platform costs, supplier employees and physical construction/installation work are excluded.</p>
+      <p class="impact-method">Capital uses successful simulated material payments, including their different payment terms; no charge on an unpaid PO or a blocked payment. No deposits, construction/services, premiums/tariffs, revenue cash receipts, principal recovery or compounding are modelled. The pre-live portion stops separately for each dependent rack at first billing; the total charge continues on paid capital through the current day. These components are not added into a claimed net ROI.</p>
+    </details>
   </div>
 </section>
 

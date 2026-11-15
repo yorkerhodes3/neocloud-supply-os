@@ -1,6 +1,6 @@
 import { mountShell, observeReveals } from '../shell.js';
 import { esc, md as mdBase } from '../lib/md.js';
-import { ADMIN, ASSUMPTIONS, REPORT_DAY, PRICE_PER_GPU_HOUR, RACK_COST_M, runHeadless, fmtLag } from '../sim/engine.js';
+import { ADMIN, ASSUMPTIONS, ECONOMICS, REPORT_DAY, PRICE_PER_GPU_HOUR, RACK_COST_M, runHeadless, fmtLag } from '../sim/engine.js';
 import { SCENARIOS } from '../sim/scenarios.js';
 import { SITES, SUPPLIERS, GPUS_PER_RACK, RACKS_PER_LOT } from '../sim/world.js';
 import { SCENARIOS as NEGO, SCENARIO_ORDER } from '../nego/scenarios.js';
@@ -35,6 +35,7 @@ const TRUTH = [
   ['Manufacture, transit and construction durations', 'illustrative', 'Same random draws in both runs (common random numbers)', 'Wrong values move both runs together, so the gap is driven by administrative latency.'],
   ['Utility energisation dates', 'illustrative', 'One date per site (days 104, 112, 118)', 'Power is often the true critical path. The demo keeps it fixed, except in scenario 05, so latency effects stay visible.'],
   [`Contract rate $${PRICE_PER_GPU_HOUR}/GPU-hour and $${RACK_COST_M}M per rack`, 'illustrative', 'Round numbers in the public range', 'They scale revenue and idle cost, but no comparison depends on them.'],
+  ['Human admin effort and financing costs', 'modelled', '`EFFORT_MINUTES`, `ECONOMICS` and successful payment events in `sim/engine.js`', `Standard active minutes, not elapsed waits or ledger line counts. Defaults $${ECONOMICS.labourRate}/hour and ${ECONOMICS.capitalRate}% annual simple cost of capital; editable in the simulation. Not measured payroll, lender charges or net ROI.`],
   [`${GPUS_PER_RACK}-GPU racks, ${RACKS_PER_LOT} racks per lot`, 'illustrative', 'Resembles current rack-scale systems', 'No vendor, SKU or configuration is implied.'],
   [`Sites: ${SITES.map(s => s.name).join(', ')}`, 'fictional', SITES.map(s => s.region).join(' · '), 'The regions are real; the sites, halls and contracts are not.'],
   [`${SUPPLIERS.length} suppliers (${SUPPLIERS.slice(0, 3).map(s => s.name).join(', ')} and others)`, 'fictional', 'Placed in plausible manufacturing regions', 'Names were chosen so they do not resemble real companies. Any resemblance is unintended.'],
@@ -98,13 +99,17 @@ const KPIS = [
   ['GPUs billable', 'GPUs in racks that passed acceptance and are earning.', 'The output that matters. Everything else explains it.'],
   ['First / all billable', 'Day the first and the last rack reached billable.', 'Time to revenue, and how long the tail runs.'],
   ['Days to live (headline)', 'Auto-resolved projected day of first / full capacity, measured from simulation day 0, not days remaining.', 'The headline contrasts both models before either has started earning; manual choices are excluded.'],
-  ['Revenue lost to latency / day', 'Difference in currently billable GPUs × 24 × the illustrative contract rate. Paused racks are excluded; the label names whichever model trails.', 'Gross daily revenue opportunity, not profit. The full-fleet one-day slip exposure is separate from the current gap. Disruption comparisons also include policy and response effects.'],
+  ['Cumulative revenue shortfall (headline)', 'Difference in cumulative billable GPU-hour revenue through the current day, including your manual decisions. Names whichever model has earned less.', 'The headline remains positive after both fleets finish: $0/day additional gap means the shortfall stops growing, not that past foregone revenue was recovered. Gross comparative opportunity, not accounting loss or profit.'],
+  ['Additional revenue gap / day', 'Difference in currently billable GPUs × 24 × the illustrative contract rate. Paused racks are excluded.', 'Secondary rate, not total loss. The projected day-240 gap auto-resolves decisions and is separately labelled; the live cumulative value does not.'],
   ['Contract → billable', 'Median days from contract signature to billable, per rack.', 'The headline cycle time the concept targets.'],
   ['Dock → billable', 'Median days from receipt on site to billable.', 'Isolates site work, test and acceptance from supply.'],
   ['Late rack-days', 'Rack-days billable after the hall’s committed need-by date.', 'Lateness the customer feels.'],
-  ['Idle capital', 'Depreciation on racks delivered but not yet earning (5-year straight line).', 'Why “as soon as possible” is not free.'],
+  ['Idle depreciation', 'Depreciation on racks delivered but not yet earning (5-year straight line).', 'An existing separate metric, not the financing cost of early cash outlays.'],
+  ['Human admin toil / labour value', 'Sum standard task minutes / 60 through the current day, multiplied by the loaded hourly rate. Per-task allocations at start; resolved exceptions add an approval allocation.', 'No wages for days waiting on a calendar; excludes supplier employees, physical crews, standing oversight and agent-platform costs. Gross capacity released, not automatic headcount or net cost savings.'],
+  ['Cost of capital', 'For each successful material payment: base amount × annual rate × days since cash outlay / 365.25. Different payment terms and JIT / ASAP affect the charge.', 'Counts paid cash, not PO value or depreciation. No deposits, construction/services, premiums/tariffs, revenue cash receipts, principal recovery or compounding; excludes unpaid or blocked payments.'],
+  ['Pre-live cost of capital', 'The portion of financing before dependent racks first become billable, allocating lot / hall / site equipment evenly across supported racks.', 'Pre-live exposure stops per rack; total paid-capital charge keeps accruing through the current day. No claim that first billing repays principal.'],
   [`Revenue to day ${REPORT_DAY}`, `Billable GPU-hours × $${PRICE_PER_GPU_HOUR}.`, 'A common horizon so both runs are compared fairly.'],
-  ['Approvals / human touches', 'Decisions sent to a person, and every step a person handled.', 'The concept’s thesis: people on exceptions only.'],
+  ['Approvals / human task count', 'The admin effort model counts tasks and actual resolved decisions rather than treating every logged event as a separate unit of work.', 'Human touches remain a legacy log-count proxy in the engine, but are not used to value toil.'],
   ['Exposure', 'Rack lots carrying a sanctioned or restricted party at the time of a shock.', 'Third-party risk, measured not asserted.'],
   ['Detection lag', 'Time from a disruption’s onset to the moment the operating model knows.', 'Continuous provider monitoring versus inbox and meetings.'],
 ];
@@ -191,7 +196,7 @@ setTimeout(() => {
     const [n, l] = ['native', 'legacy'].map(mode => runHeadless({ seed: 42, mode, scenario: 0 }).kpis());
     const ms = Math.round(performance.now() - t0);
     const d = (x) => x == null ? 'not reached' : `day ${Math.round(x)}`;
-    const k = (x) => `first billable ${d(x.firstLive)}, all billable ${d(x.allLive)}, median contract→billable ${Math.round(x.c2bMedian)} d, ${x.humanTouches.toLocaleString()} human touches, $${x.idleCostM.toFixed(1)}M idle capital`;
+    const k = (x) => `first billable ${d(x.firstLive)}, all billable ${d(x.allLive)}, median contract→billable ${Math.round(x.c2bMedian)} d, ${x.humanHours.toFixed(1)} admin hours, $${x.idleCostM.toFixed(1)}M idle depreciation`;
     live.innerHTML = `<b>Reproduced in your browser just now (seed 42, baseline, ${ms} ms).</b> Agent-native: ${k(n)}. Legacy: ${k(l)}. The physical world is the same in both runs, so the gap comes from administrative latency and call-off policy. <a class="inline" href="simulate.html?scenario=0&seed=42">Watch it</a>.`;
   } catch (e) {
     live.innerHTML = `<b>Could not run the engine here:</b> ${esc(e.message)}`;
