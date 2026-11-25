@@ -1,0 +1,10 @@
+Neocloud Supply OS
+Copyright 2026 The Neocloud Supply OS Authors
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This repository includes third-party material under its own licence:
+
+- deck.gl (MIT), vendored in docs/assets/vendor/deck/ — see docs/assets/vendor/deck/LICENSE
+- Web fonts (SIL Open Font License 1.1 unless noted), in docs/assets/fonts/ — see docs/assets/fonts/LICENSES.md
+- Ethical Tech CoLab Diplomacy Table recording (MIT), in docs/assets/runs/ — see docs/assets/runs/LICENSE-diplomacy-table-live

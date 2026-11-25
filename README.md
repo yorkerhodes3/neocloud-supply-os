@@ -211,3 +211,9 @@ This repo follows the
   [`diplomatic-simulator`](https://github.com/Ethical-Tech-CoLab/diplomatic-simulator) and
   Diplomacy Table. Site design: the Ethical Tech CoLab website design system.
 - Full source list: [CONCEPT-IDEA.md, Appendix M](CONCEPT-IDEA.md#appendix-m--sources-and-materials-used).
+
+## Licence
+
+Apache License 2.0. See [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE). Vendored third-party
+files (deck.gl, fonts, the CoLab Diplomacy Table recording) keep their own licences, listed
+in `NOTICE`.
