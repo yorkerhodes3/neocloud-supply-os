@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "id": "neocloud-supply-os",
+  "title": "Neocloud Supply OS",
+  "repo": "yorkerhodes3/neocloud-supply-os",
+  "summary": "An agent-first operating system concept for a neocloud's supply chain, from GPU sourcing and data center build to logistics and third-party risk, with a static simulation and negotiation demo.",
+  "kind": "decision-model",
+  "methodTags": [
+    "agentic-workloads",
+    "decision-models",
+    "digital-twins",
+    "open-source"
+  ],
+  "domainTags": [
+    "supply-chain-resilience"
+  ],
+  "contribution": {
+    "date": "2026-11-25",
+    "role": "built",
+    "roleNote": "Risk-provider MCP patterns credited to the supplier-risk playbook in isislcn/Hazard-and-Suppliers; simulation and negotiation concepts from CoLab projects.",
+    "credits": [
+      {
+        "name": "Isis",
+        "github": "isislcn",
+        "role": "Contributor"
+      }
+    ]
+  },
+  "narrative": {
+    "problem": "A neocloud turning signed customer demand into powered, revenue-earning GPU capacity has to coordinate chips, hardware, data center construction, logistics, asset lifecycle and third-party risk, typically across a portfolio of about 140 separate legacy applications.",
+    "decision": "The design names no third-party risk provider: every risk call goes through eleven canonical capabilities behind a RISK_PROVIDER variable, and a registry maps each capability to a provider's native MCP tool or API call.",
+    "tradeoff": "Provider function names do not converge (only get_entity matches exactly), so each provider needs a hand-built mapping that records how every native name is known, and the standard is fixed at the capability level rather than the tool level.",
+    "limitation": "The concept is signed off but the specification awaits human review with 33 open questions, 11 of them blocking. There is no production code; the economic estimates in the simulation need operational calibration before use in a business case.",
+    "caveat": "All data on the site is simulated: suppliers, counterparties and risk-provider signals are fictional and no provider is called. Brand themes are approximations, not affiliated with or endorsed by any company."
+  },
+  "evidence": {
+    "level": "design",
+    "links": [
+      {
+        "label": "Latest commit",
+        "url": "https://github.com/yorkerhodes3/neocloud-supply-os/commit/96a6161c6d2b5e70b86c354cf1f164e67d74fec2",
+        "date": "2026-11-25"
+      },
+      {
+        "label": "README",
+        "url": "https://github.com/yorkerhodes3/neocloud-supply-os#readme",
+        "date": "2026-11-25"
+      },
+      {
+        "label": "Concept (CONCEPT-IDEA.md)",
+        "url": "https://github.com/yorkerhodes3/neocloud-supply-os/blob/main/CONCEPT-IDEA.md",
+        "date": "2026-11-25"
+      },
+      {
+        "label": "Specification (draft)",
+        "url": "https://github.com/yorkerhodes3/neocloud-supply-os/blob/main/SPECIFICATION.md",
+        "date": "2026-11-25"
+      },
+      {
+        "label": "Supermicro DCBBS research note",
+        "url": "https://github.com/yorkerhodes3/neocloud-supply-os/blob/main/research/supermicro-dcbbs.md",
+        "date": "2026-11-25"
+      }
+    ]
+  },
+  "links": {
+    "source": "https://github.com/yorkerhodes3/neocloud-supply-os"
+  },
+  "images": [
+    {
+      "id": "contract-to-capacity",
+      "src": ".portfolio/contract-to-capacity.webp",
+      "alt": "Neocloud Supply OS concept demo hero reading Contract to capacity, run by agents, with buttons for the agentic simulation and negotiation room, a network of agent nodes around a central ledger, and counts of 80 functions and 36 agent desks.",
+      "caption": "The concept: one graph, one ledger and a fleet of mandated agents in place of a 140-application portfolio.",
+      "credit": "Screenshot of the Neocloud Supply OS site",
+      "source": "screenshot of docs/index.html"
+    },
+    {
+      "id": "simulation",
+      "src": ".portfolio/simulation.webp",
+      "alt": "Agentic simulation page with impact cards comparing agent-native and legacy operations on projected days to live, revenue gap, human admin toil and cost of capital, a needs-a-human escalation, a scenario picker, a globe with site labels and a scoreboard.",
+      "caption": "The agentic simulation runs an agent-native and a legacy operation side by side on the same seeded world; all figures are synthetic.",
+      "credit": "Screenshot of the Neocloud Supply OS site",
+      "source": "screenshot of docs/simulate.html"
+    },
+    {
+      "id": "brand-kit",
+      "src": ".portfolio/brand-kit.webp",
+      "alt": "Brand kit page headed One design system, any brand, explaining that every colour, typeface, radius and glow is a CSS variable and that the theme engine enforces WCAG contrast, with Pick a preset and Build your own buttons.",
+      "caption": "The brand kit re-dresses the demo for different audiences from a few core tokens while enforcing contrast.",
+      "credit": "Screenshot of the Neocloud Supply OS site",
+      "source": "screenshot of docs/brand.html"
+    }
+  ],
+  "defaultImageId": "contract-to-capacity"
+}
